@@ -236,3 +236,20 @@ def cancel_event(registration_id: int, db: Session = Depends(get_db)):
         "refund_percent": refund_percent * 100
     }
 
+@app.get("/ui/students")
+def get_students(db: Session = Depends(get_db)):
+    students = db.query(Student).all()
+
+    result = []
+    for s in students:
+        result.append({
+            "id": s.id,
+            "email": s.email,
+            "trust_score": s.trust_score,
+            "trust_tier": s.trust_tier,
+            "risky": s.trust_score < 40
+        })
+
+    return result
+
+
