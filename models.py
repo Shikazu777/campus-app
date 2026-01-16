@@ -28,6 +28,7 @@ class CanteenOrder(Base):
     total_amount = Column(Float)
     advance_paid = Column(Float)
     status = Column(String)
+    qr_token = Column(String, unique=True)   
     created_at = Column(DateTime, default=datetime.utcnow)
 
 class Event(Base):
@@ -44,13 +45,12 @@ class Event(Base):
 
 class EventRegistration(Base):
     __tablename__ = "event_registrations"
-
     id = Column(Integer, primary_key=True)
     student_id = Column(Integer)
     event_id = Column(Integer)
-    status = Column(String)  # registered / attended / no_show
+    status = Column(String)
+    qr_token = Column(String, unique=True)  
     created_at = Column(DateTime, default=datetime.utcnow)
-    transferred_to = Column(Integer, nullable=True)
 
 
 

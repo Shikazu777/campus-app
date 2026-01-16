@@ -5,6 +5,7 @@ from models import Student, Transaction, CanteenOrder
 from models import Event, EventRegistration
 from scoring import update_trust_score
 from datetime import datetime
+from qr_utils import generate_qr_token
 
 app = FastAPI()
 
@@ -65,12 +66,13 @@ def canteen_preorder(
         advance = 0.0
 
     order = CanteenOrder(
-        student_id=student_id,
-        item=item,
-        total_amount=amount,
-        advance_paid=advance,
-        status="created"
-    )
+    student_id=student_id,
+    item=item,
+    total_amount=amount,
+    advance_paid=advance,
+    status="created",
+    qr_token=generate_qr_token("CANTEEN")
+   )
 
     db.add(order)
     db.commit()
@@ -78,6 +80,7 @@ def canteen_preorder(
     return {
         "message": "Pre-order created",
         "order_id": order.id,
+        "qr_token": order.qr_token,
         "advance_to_pay": advance,
         "status": order.status
     }
@@ -93,6 +96,20 @@ def mark_order_ready(order_id: int, db: Session = Depends(get_db)):
     db.commit()
 
     return {"message": "Order marked ready"}
+
+@app.post("/canteen/scan")
+def scan_canteen_qr(qr_token: str, db: Session = Depends(get_db)):
+    order = db.query(CanteenOrder).filter(
+        CanteenOrder.qr_token == qr_token
+    ).first()
+
+    if not order or order.status != "ready":
+        return {"error": "Invalid or not ready"}
+
+    order.status = "collected"
+    db.commit()
+    return {"message": "Order collected"}
+
 
 
 @app.post("/canteen/collect")
@@ -120,13 +137,30 @@ def create_event(name: str, fee: float, db: Session = Depends(get_db)):
 @app.post("/event/register")
 def register_event(student_id: int, event_id: int, db: Session = Depends(get_db)):
     reg = EventRegistration(
-        student_id=student_id,
-        event_id=event_id,
-        status="registered"
-    )
+    student_id=student_id,
+    event_id=event_id,
+    status="registered",
+    qr_token=generate_qr_token("EVENT")
+   )
     db.add(reg)
     db.commit()
-    return {"message": "Registered for event", "registration_id": reg.id}
+    return {"message": "Registered for event",
+            "registration_id": reg.id,
+            "qr_token": reg.qr_token}
+
+@app.post("/event/scan")
+def scan_event_qr(qr_token: str, db: Session = Depends(get_db)):
+    reg = db.query(EventRegistration).filter(
+        EventRegistration.qr_token == qr_token
+    ).first()
+
+    if not reg or reg.status != "registered":
+        return {"error": "Invalid ticket"}
+
+    reg.status = "attended"
+    db.commit()
+    return {"message": "Entry allowed"}
+
 
 @app.post("/event/attend")
 def attend_event(registration_id: int, db: Session = Depends(get_db)):
