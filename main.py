@@ -6,6 +6,8 @@ from models import Event, EventRegistration
 from scoring import update_trust_score
 from datetime import datetime
 from qr_utils import generate_qr_token
+from fastapi.middleware.cors import CORSMiddleware
+
 
 app = FastAPI()
 
@@ -252,4 +254,10 @@ def get_students(db: Session = Depends(get_db)):
 
     return result
 
-
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
