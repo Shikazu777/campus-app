@@ -29,3 +29,28 @@ class CanteenOrder(Base):
     advance_paid = Column(Float)
     status = Column(String)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+class Event(Base):
+    __tablename__ = "events"
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String)
+    fee = Column(Float)
+    total_tickets = Column(Integer, nullable=True)  # NULL = unlimited
+    tickets_sold = Column(Integer, default=0)
+    event_time = Column(DateTime)
+
+
+
+class EventRegistration(Base):
+    __tablename__ = "event_registrations"
+
+    id = Column(Integer, primary_key=True)
+    student_id = Column(Integer)
+    event_id = Column(Integer)
+    status = Column(String)  # registered / attended / no_show
+    created_at = Column(DateTime, default=datetime.utcnow)
+    transferred_to = Column(Integer, nullable=True)
+
+
+

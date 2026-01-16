@@ -1,8 +1,10 @@
 from fastapi import FastAPI, Depends
 from sqlalchemy.orm import Session
 from database import SessionLocal
-from models import Student, Transaction
+from models import Student, Transaction, CanteenOrder
+from models import Event, EventRegistration
 from scoring import update_trust_score
+from datetime import datetime
 
 app = FastAPI()
 
@@ -44,3 +46,159 @@ def simulate_payment(student_id: int, amount: float, status: str, db: Session = 
         "trust_score": new_score,
         "trust_tier": tier
     }
+
+@app.post("/canteen/preorder")
+def canteen_preorder(
+    student_id: int,
+    item: str,
+    amount: float,
+    db: Session = Depends(get_db)
+):
+    student = db.query(Student).filter(Student.id == student_id).first()
+
+    if student.trust_tier == "Weak":
+        return {"error": "Pre-order not allowed for your trust tier"}
+
+    if student.trust_tier == "Normal":
+        advance = amount * 0.5
+    else:  # Good
+        advance = 0.0
+
+    order = CanteenOrder(
+        student_id=student_id,
+        item=item,
+        total_amount=amount,
+        advance_paid=advance,
+        status="created"
+    )
+
+    db.add(order)
+    db.commit()
+
+    return {
+        "message": "Pre-order created",
+        "order_id": order.id,
+        "advance_to_pay": advance,
+        "status": order.status
+    }
+
+@app.post("/canteen/mark-ready")
+def mark_order_ready(order_id: int, db: Session = Depends(get_db)):
+    order = db.query(CanteenOrder).filter(CanteenOrder.id == order_id).first()
+
+    if not order:
+        return {"error": "Order not found"}
+
+    order.status = "ready"
+    db.commit()
+
+    return {"message": "Order marked ready"}
+
+
+@app.post("/canteen/collect")
+def collect_order(order_id: int, db: Session = Depends(get_db)):
+    order = db.query(CanteenOrder).filter(CanteenOrder.id == order_id).first()
+
+    if not order:
+         return {"error": "Order not found"}
+
+    if order.status != "ready":
+         return {"error": "Order not ready yet"}
+
+    order.status = "collected"
+    db.commit()
+
+    return {"message": "Order collected successfully"}
+
+@app.post("/event/create")
+def create_event(name: str, fee: float, db: Session = Depends(get_db)):
+    event = Event(name=name, fee=fee)
+    db.add(event)
+    db.commit()
+    return {"event_id": event.id, "name": name}
+
+@app.post("/event/register")
+def register_event(student_id: int, event_id: int, db: Session = Depends(get_db)):
+    reg = EventRegistration(
+        student_id=student_id,
+        event_id=event_id,
+        status="registered"
+    )
+    db.add(reg)
+    db.commit()
+    return {"message": "Registered for event", "registration_id": reg.id}
+
+@app.post("/event/attend")
+def attend_event(registration_id: int, db: Session = Depends(get_db)):
+    reg = db.query(EventRegistration).filter(
+        EventRegistration.id == registration_id
+    ).first()
+
+    if not reg:
+        return {"error": "Registration not found"}
+
+    reg.status = "attended"
+    db.commit()
+    return {"message": "Attendance marked"}
+
+@app.post("/event/no-show")
+def no_show(registration_id: int, db: Session = Depends(get_db)):
+    reg = db.query(EventRegistration).filter(
+        EventRegistration.id == registration_id
+    ).first()
+
+    if not reg:
+        return {"error": "Registration not found"}
+
+    student = db.query(Student).filter(Student.id == reg.student_id).first()
+
+    # penalty
+    student.trust_score -= 10
+    if student.trust_score < 40:
+        student.trust_tier = "Weak"
+
+    reg.status = "no_show"
+    db.commit()
+
+    return {
+        "message": "No-show recorded",
+        "new_trust_score": student.trust_score,
+        "trust_tier": student.trust_tier
+    }
+
+@app.post("/event/transfer")
+def transfer_ticket(registration_id: int, to_student_id: int, db: Session = Depends(get_db)):
+    reg = db.query(EventRegistration).filter(EventRegistration.id == registration_id).first()
+
+    if not reg or reg.status != "registered":
+        return {"error": "Transfer not allowed"}
+
+    reg.transferred_to = to_student_id
+    db.commit()
+
+    return {"message": "Ticket transferred"}
+
+@app.post("/event/cancel")
+def cancel_event(registration_id: int, db: Session = Depends(get_db)):
+    reg = db.query(EventRegistration).filter(EventRegistration.id == registration_id).first()
+    event = db.query(Event).filter(Event.id == reg.event_id).first()
+
+    hours_left = (event.event_time - datetime.utcnow()).total_seconds() / 3600
+
+    if hours_left < 24:
+        refund_percent = 0.5
+    elif hours_left <= 72:
+        refund_percent = 0.75
+    else:
+        refund_percent = 0.9
+
+    refund_amount = event.fee * refund_percent
+    reg.status = "cancelled"
+    db.commit()
+
+    return {
+        "message": "Event cancelled",
+        "refund_amount": refund_amount,
+        "refund_percent": refund_percent * 100
+    }
+
