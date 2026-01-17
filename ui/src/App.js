@@ -1,11 +1,12 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Sidebar from "./components/Sidebar";
-
 import Canteen from "./pages/Canteen";
 import Cart from "./pages/Cart";
 import OrderDetails from "./pages/OrderDetails";
 import Events from "./pages/Events";
 import Bookings from "./pages/Bookings";
+import { CartProvider } from "./context/CartContext";
+
 
 export default function App() {
 
@@ -15,8 +16,10 @@ export default function App() {
   };
 
   return (
-    <BrowserRouter>
+    <CartProvider>
+     <BrowserRouter>
       <div style={{ display: "flex" }}>
+
         <Sidebar role={currentUser.role} />
 
         <div style={{
@@ -37,5 +40,6 @@ export default function App() {
         </div>
       </div>
     </BrowserRouter>
+    </CartProvider>
   );
 }

@@ -1,22 +1,14 @@
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useCart } from "../context/CartContext";
 
 export default function Cart() {
   const navigate = useNavigate();
 
-  // TEMP shared cart (later via context)
-  const [cart, setCart] = useState([
-    { id: 1, name: "Samosa", price: 15, qty: 2 },
-    { id: 2, name: "Veg Meals", price: 80, qty: 1 }
-  ]);
-
-  const total = cart.reduce(
-    (sum, i) => sum + i.price * i.qty,
-    0
-  );
+  const { cart, updateQty, total, clearCart } = useCart();
 
   const placeOrder = () => {
     const orderId = Math.floor(Math.random() * 100000);
+    clearCart();
     navigate(`/canteen/order/${orderId}`);
   };
 
@@ -24,17 +16,25 @@ export default function Cart() {
     <div>
       <h1>🛒 Cart</h1>
 
+      {cart.length === 0 && <p>Your cart is empty</p>}
+
       {cart.map(i => (
         <div key={i.id}>
           {i.name} × {i.qty} — ₹{i.price * i.qty}
+          <button onClick={() => updateQty(i.id, 1)}>+</button>
+          <button onClick={() => updateQty(i.id, -1)}>-</button>
         </div>
       ))}
 
-      <h3>Total: ₹{total}</h3>
+      {cart.length > 0 && (
+        <>
+          <h3>Total: ₹{total}</h3>
 
-      <button onClick={placeOrder}>
-        Proceed to Pay
-      </button>
+          <button onClick={placeOrder}>
+            Proceed to Pay
+          </button>
+        </>
+      )}
     </div>
   );
 }

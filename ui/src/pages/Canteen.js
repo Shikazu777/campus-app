@@ -1,5 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useCart } from "../context/CartContext";
+
+
 
 
 /* -------- FAKE FOOD DATA (₹) -------- */
@@ -20,7 +23,8 @@ const FOOD_DATA = {
 
 export default function Canteen() {
   const [category, setCategory] = useState("Meals");
-  const [cart, setCart] = useState([]);
+  const { cart, addToCart } = useCart();
+
   // FOOD | CART | ORDER
   const [order, setOrder] = useState(null);
   const [history, setHistory] = useState([]);
@@ -29,6 +33,7 @@ export default function Canteen() {
 
   /* -------- CART LOGIC -------- */
 
+  const navigate = useNavigate();
   const addToCart = (item) => {
     const existing = cart.find(i => i.id === item.id);
     if (existing) {
@@ -64,24 +69,22 @@ export default function Canteen() {
   if (trustTier === "Weak") advance = total;
   else if (trustTier === "Normal") advance = total * 0.5;
 
-  const placeOrder = () => {
-    const newOrder = {
-      id: Math.floor(Math.random() * 100000),
-      items: cart,
-      total,
-      status: "Preparing"
-    };
-
-    setOrder(newOrder);
-    setHistory([newOrder, ...history]);
-    setCart([]);
-    setScreen("ORDER");
-
-    // simulate ready in 10–30 mins
-    setTimeout(() => {
-      setOrder(o => ({ ...o, status: "Ready" }));
-    }, 3000);
+  
+    const placeOrder = () => {
+  const newOrder = {
+    id: Math.floor(Math.random() * 100000),
+    items: cart,
+    total,
+    status: "Preparing"
   };
+
+  setOrder(newOrder);
+  setHistory([newOrder, ...history]);
+  setCart([]);
+
+  navigate(`/canteen/order/${newOrder.id}`);
+};
+
 
   /* -------- RENDER -------- */
 
@@ -164,9 +167,7 @@ export default function Canteen() {
             <p>🍽 Order Collected</p>
           )}
 
-          <button onClick={() => setScreen("FOOD")}>
-            Back to Canteen
-          </button>
+          
         </>
       )}
     </div>
