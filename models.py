@@ -52,7 +52,8 @@ class EventRegistration(Base):
     student_id = Column(Integer)
     event_id = Column(Integer)
     status = Column(String)
-    qr_token = Column(String, unique=True)  
+    qr_token = Column(String, unique=True)
+    transferred_to = Column(Integer, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
 class User(Base):
