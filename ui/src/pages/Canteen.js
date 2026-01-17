@@ -2,9 +2,6 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 
-
-
-
 /* -------- FAKE FOOD DATA (₹) -------- */
 const FOOD_DATA = {
   Meals: [
@@ -23,45 +20,15 @@ const FOOD_DATA = {
 
 export default function Canteen() {
   const [category, setCategory] = useState("Meals");
-  const { cart, addToCart } = useCart();
-
-  // FOOD | CART | ORDER
   const [order, setOrder] = useState(null);
   const [history, setHistory] = useState([]);
 
-  const trustTier = "Normal"; // Weak / Normal / Good
-
-  /* -------- CART LOGIC -------- */
-
   const navigate = useNavigate();
-  const addToCart = (item) => {
-    const existing = cart.find(i => i.id === item.id);
-    if (existing) {
-      setCart(
-        cart.map(i =>
-          i.id === item.id ? { ...i, qty: i.qty + 1 } : i
-        )
-      );
-    } else {
-      setCart([...cart, { ...item, qty: 1 }]);
-    }
-    alert("Added to cart");
-  };
 
-  const updateQty = (id, delta) => {
-    setCart(
-      cart
-        .map(i =>
-          i.id === id ? { ...i, qty: i.qty + delta } : i
-        )
-        .filter(i => i.qty > 0)
-    );
-  };
+  // GLOBAL CART
+  const { cart, addToCart, total, clearCart } = useCart();
 
-  const total = cart.reduce(
-    (sum, i) => sum + i.price * i.qty,
-    0
-  );
+  const trustTier = "Normal"; // Weak / Normal / Good
 
   /* -------- PAYMENT -------- */
 
@@ -69,22 +36,20 @@ export default function Canteen() {
   if (trustTier === "Weak") advance = total;
   else if (trustTier === "Normal") advance = total * 0.5;
 
-  
-    const placeOrder = () => {
-  const newOrder = {
-    id: Math.floor(Math.random() * 100000),
-    items: cart,
-    total,
-    status: "Preparing"
+  const placeOrder = () => {
+    const newOrder = {
+      id: Math.floor(Math.random() * 100000),
+      items: cart,
+      total,
+      status: "Preparing"
+    };
+
+    setOrder(newOrder);
+    setHistory([newOrder, ...history]);
+    clearCart();
+
+    navigate(`/canteen/order/${newOrder.id}`);
   };
-
-  setOrder(newOrder);
-  setHistory([newOrder, ...history]);
-  setCart([]);
-
-  navigate(`/canteen/order/${newOrder.id}`);
-};
-
 
   /* -------- RENDER -------- */
 
@@ -93,7 +58,6 @@ export default function Canteen() {
       <h1>🍔 Canteen</h1>
 
       {!order && (
-
         <>
           {/* CATEGORY */}
           <div style={{ display: "flex", gap: 10 }}>
@@ -122,12 +86,11 @@ export default function Canteen() {
 
           {cart.length > 0 && (
             <button
-             style={{ marginTop: 20 }}
-                onClick={() => navigate("/canteen/cart")}
-               >
-             Go to Cart ({cart.length})
+              style={{ marginTop: 20 }}
+              onClick={() => navigate("/canteen/cart")}
+            >
+              Go to Cart ({cart.length})
             </button>
-
           )}
 
           {/* RECENT ORDERS */}
@@ -140,9 +103,7 @@ export default function Canteen() {
         </>
       )}
 
-
       {order && (
-
         <>
           <h2>✅ Order Placed</h2>
           <p>Order ID: {order.id}</p>
@@ -166,8 +127,6 @@ export default function Canteen() {
           {order.status === "Collected" && (
             <p>🍽 Order Collected</p>
           )}
-
-          
         </>
       )}
     </div>
