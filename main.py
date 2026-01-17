@@ -7,6 +7,7 @@ from scoring import update_trust_score
 from datetime import datetime
 from qr_utils import generate_qr_token
 from fastapi.middleware.cors import CORSMiddleware
+from models import User
 from rbac import has_role
 
 
@@ -95,6 +96,15 @@ def mark_ready(order_id: int, current_user_id: int, db: Session = Depends(get_db
     if user.user_type != "owner" and not has_role(user, "CANTEEN_EDITOR"):
         return {"error": "Permission denied"}
 
+    order = db.query(CanteenOrder).filter(CanteenOrder.id == order_id).first()
+    if not order:
+        return {"error": "Order not found"}
+
+    order.status = "ready"
+    db.commit()
+
+    return {"message": "Order marked ready"}
+
 @app.post("/canteen/scan")
 def scan_canteen_qr(qr_token: str, db: Session = Depends(get_db)):
     order = db.query(CanteenOrder).filter(
@@ -125,27 +135,56 @@ def collect_order(order_id: int, db: Session = Depends(get_db)):
 
     return {"message": "Order collected successfully"}
 
+
 @app.post("/event/create")
-def create_event(current_user_id: int, name: str, fee: float, db: Session = Depends(get_db)):
+def create_event(
+    current_user_id: int,
+    name: str,
+    fee: float,
+    event_time: datetime,
+    db: Session = Depends(get_db)
+):
     user = db.query(User).filter(User.id == current_user_id).first()
 
     if user.user_type != "owner" and not has_role(user, "EVENT_EDITOR"):
         return {"error": "Permission denied"}
+
+    event = Event(
+        name=name,
+        fee=fee,
+        event_time=event_time
+    )
+
+    db.add(event)
+    db.commit()
+
+    return {"message": "Event created", "event_id": event.id}
+
     
 
 @app.post("/event/register")
 def register_event(student_id: int, event_id: int, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.id == student_id).first()
+
+    if user.user_type != "student":
+        return {"error": "Only students can buy tickets"}
+
     reg = EventRegistration(
-    student_id=student_id,
-    event_id=event_id,
-    status="registered",
-    qr_token=generate_qr_token("EVENT")
-   )
+        student_id=student_id,
+        event_id=event_id,
+        status="registered",
+        qr_token=generate_qr_token("EVENT")
+    )
+
     db.add(reg)
     db.commit()
-    return {"message": "Registered for event",
-            "registration_id": reg.id,
-            "qr_token": reg.qr_token}
+
+    return {
+        "message": "Registered for event",
+        "registration_id": reg.id,
+        "qr_token": reg.qr_token
+    }
+
 
 @app.post("/event/scan")
 def scan_event_qr(qr_token: str, db: Session = Depends(get_db)):
