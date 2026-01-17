@@ -7,6 +7,7 @@ from scoring import update_trust_score
 from datetime import datetime
 from qr_utils import generate_qr_token
 from fastapi.middleware.cors import CORSMiddleware
+from rbac import has_role
 
 
 app = FastAPI()
@@ -88,16 +89,11 @@ def canteen_preorder(
     }
 
 @app.post("/canteen/mark-ready")
-def mark_order_ready(order_id: int, db: Session = Depends(get_db)):
-    order = db.query(CanteenOrder).filter(CanteenOrder.id == order_id).first()
+def mark_ready(order_id: int, current_user_id: int, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.id == current_user_id).first()
 
-    if not order:
-        return {"error": "Order not found"}
-
-    order.status = "ready"
-    db.commit()
-
-    return {"message": "Order marked ready"}
+    if user.user_type != "owner" and not has_role(user, "CANTEEN_EDITOR"):
+        return {"error": "Permission denied"}
 
 @app.post("/canteen/scan")
 def scan_canteen_qr(qr_token: str, db: Session = Depends(get_db)):
@@ -130,11 +126,12 @@ def collect_order(order_id: int, db: Session = Depends(get_db)):
     return {"message": "Order collected successfully"}
 
 @app.post("/event/create")
-def create_event(name: str, fee: float, db: Session = Depends(get_db)):
-    event = Event(name=name, fee=fee)
-    db.add(event)
-    db.commit()
-    return {"event_id": event.id, "name": name}
+def create_event(current_user_id: int, name: str, fee: float, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.id == current_user_id).first()
+
+    if user.user_type != "owner" and not has_role(user, "EVENT_EDITOR"):
+        return {"error": "Permission denied"}
+    
 
 @app.post("/event/register")
 def register_event(student_id: int, event_id: int, db: Session = Depends(get_db)):
@@ -238,6 +235,8 @@ def cancel_event(registration_id: int, db: Session = Depends(get_db)):
         "refund_percent": refund_percent * 100
     }
 
+
+
 @app.get("/ui/students")
 def get_students(db: Session = Depends(get_db)):
     students = db.query(Student).all()
@@ -253,6 +252,7 @@ def get_students(db: Session = Depends(get_db)):
         })
 
     return result
+
 
 app.add_middleware(
     CORSMiddleware,

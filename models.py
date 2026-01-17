@@ -1,6 +1,9 @@
 from sqlalchemy import Column, Integer, Float, String, DateTime
 from datetime import datetime
 from database import Base
+from sqlalchemy import Boolean, ForeignKey
+from sqlalchemy.orm import relationship
+
 
 class Student(Base):
     __tablename__ = "students"
@@ -52,5 +55,31 @@ class EventRegistration(Base):
     qr_token = Column(String, unique=True)  
     created_at = Column(DateTime, default=datetime.utcnow)
 
+class User(Base):
+    __tablename__ = "users"
 
+    id = Column(Integer, primary_key=True)
+    email = Column(String, unique=True, index=True)
+    register_number = Column(String, nullable=True)
+    user_type = Column(String)  # student / faculty / owner
+    trust_score = Column(Float, default=50.0)
+    trust_tier = Column(String, default="Normal")
+
+    roles = relationship("UserRole", back_populates="user")
+
+class Role(Base):
+    __tablename__ = "roles"
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String, unique=True)  # OWNER, EVENT_EDITOR, CANTEEN_EDITOR
+
+
+class UserRole(Base):
+    __tablename__ = "user_roles"
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    role_id = Column(Integer, ForeignKey("roles.id"))
+
+    user = relationship("User", back_populates="roles")
 
