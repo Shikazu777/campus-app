@@ -1,44 +1,35 @@
-import { useEffect, useState } from "react";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import Sidebar from "./components/Sidebar";
 
-function App() {
-  const [students, setStudents] = useState([]);
+import Canteen from "./pages/Canteen";
+import Events from "./pages/Events";
+import Bookings from "./pages/Bookings";
 
-  useEffect(() => {
-    fetch("http://127.0.0.1:8000/ui/students")
-      .then(res => res.json())
-      .then(data => setStudents(data));
-  }, []);
+export default function App() {
+
+  // TEMP: simulate logged-in user
+  const currentUser = {
+    role: "OWNER" // change to STUDENT / EVENT_EDITOR / CANTEEN_EDITOR
+  };
 
   return (
-    <div style={{ padding: "20px", fontFamily: "Arial" }}>
-      <h1>Campus Trust Dashboard</h1>
+    <BrowserRouter>
+      <div style={{ display: "flex" }}>
+        <Sidebar role={currentUser.role} />
 
-      <table border="1" cellPadding="8">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Email</th>
-            <th>Trust Score</th>
-            <th>Tier</th>
-            <th>Risk</th>
-          </tr>
-        </thead>
-        <tbody>
-          {students.map(s => (
-            <tr key={s.id}>
-              <td>{s.id}</td>
-              <td>{s.email}</td>
-              <td>{s.trust_score}</td>
-              <td>{s.trust_tier}</td>
-              <td style={{ color: s.risky ? "red" : "green" }}>
-                {s.risky ? "HIGH" : "LOW"}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+        <div style={{
+          flex: 1,
+          padding: "30px",
+          background: "#f5f5f5",
+          minHeight: "100vh"
+        }}>
+          <Routes>
+            <Route path="/canteen" element={<Canteen />} />
+            <Route path="/events" element={<Events />} />
+            <Route path="/bookings" element={<Bookings />} />
+          </Routes>
+        </div>
+      </div>
+    </BrowserRouter>
   );
 }
-
-export default App;
