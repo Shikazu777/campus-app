@@ -1,36 +1,49 @@
 import { useParams } from "react-router-dom";
-import { useState } from "react";
+import { useOrders } from "../context/OrderContext";
 
 export default function OrderDetails() {
   const { id } = useParams();
+  const { getOrderById, updateOrderStatus } = useOrders();
 
-  // TEMP order data
-  const [status, setStatus] = useState("Preparing");
+  const order = getOrderById(id);
+
+  if (!order) {
+    return <p>❌ Order not found</p>;
+  }
 
   return (
     <div>
-      <h1>📦 Order #{id}</h1>
+      <h1>📦 Order #{order.id}</h1>
 
-      <p>Status: <b>{status}</b></p>
-      <p>Your order will be ready in 10–30 minutes.</p>
+      <p>Status: <b>{order.status}</b></p>
+      <p>Total: ₹{order.total}</p>
 
-      {status === "Ready" && (
+      <h3>Items</h3>
+      {order.items.map(i => (
+        <p key={i.id}>
+          {i.name} × {i.qty} — ₹{i.price * i.qty}
+        </p>
+      ))}
+
+      {order.status === "Preparing" && (
+        <p>Your order is being prepared.</p>
+      )}
+
+      {order.status === "Ready" && (
         <div style={qrBox}>
-          <p>Show QR at canteen</p>
+          <p>Show this QR at canteen</p>
           <div style={qr}>QR CODE</div>
-          <button onClick={() => setStatus("Collected")}>
+          <button
+            onClick={() =>
+              updateOrderStatus(order.id, "Collected")
+            }
+          >
             Simulate Scan
           </button>
         </div>
       )}
 
-      {status === "Preparing" && (
-        <button onClick={() => setStatus("Ready")}>
-          Simulate Ready
-        </button>
-      )}
-
-      {status === "Collected" && (
+      {order.status === "Collected" && (
         <p>🍽 Order Collected</p>
       )}
     </div>
@@ -41,11 +54,11 @@ const qrBox = {
   marginTop: 20,
   padding: 20,
   background: "#fff",
-  width: 200
+  width: 220
 };
 
 const qr = {
-  height: 100,
+  height: 120,
   background: "#ddd",
   display: "flex",
   alignItems: "center",

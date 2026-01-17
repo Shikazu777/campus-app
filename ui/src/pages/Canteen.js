@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
+import { useOrders } from "../context/OrderContext";
+
 
 /* -------- FAKE FOOD DATA (₹) -------- */
 const FOOD_DATA = {
@@ -22,7 +24,7 @@ export default function Canteen() {
   const [category, setCategory] = useState("Meals");
   const [order, setOrder] = useState(null);
   const [history, setHistory] = useState([]);
-
+  const { addOrder } = useOrders();
   const navigate = useNavigate();
 
   // GLOBAL CART
@@ -45,7 +47,9 @@ export default function Canteen() {
     };
 
     setOrder(newOrder);
+    addOrder(newOrder);
     setHistory([newOrder, ...history]);
+
     clearCart();
 
     navigate(`/canteen/order/${newOrder.id}`);
@@ -96,9 +100,14 @@ export default function Canteen() {
           {/* RECENT ORDERS */}
           <h3 style={{ marginTop: 40 }}>Recent Orders</h3>
           {history.slice(0, 3).map(o => (
-            <p key={o.id}>
-              Order #{o.id} — ₹{o.total}
-            </p>
+            <p
+             key={o.id}
+             style={{ cursor: "pointer", color: "#007bff" }}
+             onClick={() => navigate(`/canteen/order/${o.id}`)}
+           >
+             Order #{o.id} — ₹{o.total}
+           </p>
+
           ))}
         </>
       )}

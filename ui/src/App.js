@@ -6,6 +6,8 @@ import OrderDetails from "./pages/OrderDetails";
 import Events from "./pages/Events";
 import Bookings from "./pages/Bookings";
 import { CartProvider } from "./context/CartContext";
+import { OrderProvider } from "./context/OrderContext";
+
 
 
 export default function App() {
@@ -17,11 +19,11 @@ export default function App() {
 
   return (
     <CartProvider>
+      <OrderProvider>
      <BrowserRouter>
       <div style={{ display: "flex" }}>
 
-        <Sidebar role={currentUser.role} />
-
+            <Sidebar role={currentUser.role} />
         <div style={{
           flex: 1,
           padding: "30px",
@@ -40,6 +42,7 @@ export default function App() {
         </div>
       </div>
     </BrowserRouter>
-    </CartProvider>
+    </OrderProvider>
+   </CartProvider>
   );
 }
