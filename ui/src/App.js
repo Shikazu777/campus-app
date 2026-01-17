@@ -2,6 +2,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Sidebar from "./components/Sidebar";
 
 import Canteen from "./pages/Canteen";
+import Cart from "./pages/Cart";
+import OrderDetails from "./pages/OrderDetails";
 import Events from "./pages/Events";
 import Bookings from "./pages/Bookings";
 
@@ -25,9 +27,13 @@ export default function App() {
         }}>
           <Routes>
             <Route path="/canteen" element={<Canteen />} />
+            <Route path="/canteen/cart" element={<Cart />} />
+            <Route path="/canteen/order/:id" element={<OrderDetails />} />
+
             <Route path="/events" element={<Events />} />
             <Route path="/bookings" element={<Bookings />} />
           </Routes>
+
         </div>
       </div>
     </BrowserRouter>

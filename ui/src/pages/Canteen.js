@@ -1,187 +1,198 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
+
+/* -------- FAKE FOOD DATA (₹) -------- */
 const FOOD_DATA = {
   Meals: [
     { id: 1, name: "Veg Meals", price: 80 },
-    { id: 2, name: "Chicken Meals", price: 120 },
-    { id: 3, name: "Egg Fried Rice", price: 90 }
+    { id: 2, name: "Chicken Meals", price: 120 }
   ],
   Snacks: [
-    { id: 4, name: "Samosa", price: 15 },
-    { id: 5, name: "Bajji", price: 20 },
-    { id: 6, name: "Puffs", price: 25 }
+    { id: 3, name: "Samosa", price: 15 },
+    { id: 4, name: "Bajji", price: 20 }
   ],
   Drinks: [
-    { id: 7, name: "Tea", price: 12 },
-    { id: 8, name: "Coffee", price: 15 },
-    { id: 9, name: "Lime Juice", price: 25 }
+    { id: 5, name: "Tea", price: 12 },
+    { id: 6, name: "Coffee", price: 15 }
   ]
 };
 
 export default function Canteen() {
   const [category, setCategory] = useState("Meals");
   const [cart, setCart] = useState([]);
-  const [orderPlaced, setOrderPlaced] = useState(false);
+  // FOOD | CART | ORDER
+  const [order, setOrder] = useState(null);
   const [history, setHistory] = useState([]);
 
-  // TEMP: simulate trust tier
   const trustTier = "Normal"; // Weak / Normal / Good
 
+  /* -------- CART LOGIC -------- */
+
   const addToCart = (item) => {
-    setCart([...cart, item]);
+    const existing = cart.find(i => i.id === item.id);
+    if (existing) {
+      setCart(
+        cart.map(i =>
+          i.id === item.id ? { ...i, qty: i.qty + 1 } : i
+        )
+      );
+    } else {
+      setCart([...cart, { ...item, qty: 1 }]);
+    }
+    alert("Added to cart");
   };
 
-  const total = cart.reduce((sum, i) => sum + i.price, 0);
+  const updateQty = (id, delta) => {
+    setCart(
+      cart
+        .map(i =>
+          i.id === id ? { ...i, qty: i.qty + delta } : i
+        )
+        .filter(i => i.qty > 0)
+    );
+  };
+
+  const total = cart.reduce(
+    (sum, i) => sum + i.price * i.qty,
+    0
+  );
+
+  /* -------- PAYMENT -------- */
 
   let advance = 0;
   if (trustTier === "Weak") advance = total;
   else if (trustTier === "Normal") advance = total * 0.5;
-  else advance = 0;
+
+  const placeOrder = () => {
+    const newOrder = {
+      id: Math.floor(Math.random() * 100000),
+      items: cart,
+      total,
+      status: "Preparing"
+    };
+
+    setOrder(newOrder);
+    setHistory([newOrder, ...history]);
+    setCart([]);
+    setScreen("ORDER");
+
+    // simulate ready in 10–30 mins
+    setTimeout(() => {
+      setOrder(o => ({ ...o, status: "Ready" }));
+    }, 3000);
+  };
+
+  /* -------- RENDER -------- */
 
   return (
     <div>
       <h1>🍔 Canteen</h1>
 
-      {/* CATEGORY TABS */}
-      <div style={{ display: "flex", gap: "10px", marginBottom: "20px" }}>
-        {Object.keys(FOOD_DATA).map(cat => (
-          <button
-            key={cat}
-            onClick={() => setCategory(cat)}
-            style={{
-              padding: "10px 16px",
-              borderRadius: "8px",
-              border: "none",
-              background: cat === category ? "#111" : "#ddd",
-              color: cat === category ? "white" : "black",
-              cursor: "pointer"
-            }}
-          >
-            {cat}
-          </button>
-        ))}
-      </div>
+      {!order && (
 
-      {/* FOOD LIST */}
-      <div style={{ display: "flex", gap: "20px", flexWrap: "wrap" }}>
-        {FOOD_DATA[category].map(item => (
-          <div key={item.id} style={cardStyle}>
-            <h3>{item.name}</h3>
-            <p>₹ {item.price}</p>
-            <button onClick={() => addToCart(item)} style={btnStyle}>
-              Add
-            </button>
-          </div>
-        ))}
-      </div>
-
-      {/* CART */}
-      <div style={{ marginTop: "40px" }}>
-        <h2>🛒 Cart</h2>
-
-        {cart.length === 0 && <p>No items added</p>}
-
-        {cart.map((i, idx) => (
-          <p key={idx}>{i.name} — ₹{i.price}</p>
-        ))}
-
-        {cart.length > 0 && (
-          <>
-            <h3>Total: ₹{total}</h3>
-            <p>
-              Trust Tier: <b>{trustTier}</b><br />
-              Advance to Pay: <b>₹{advance}</b>
-            </p>
-
-            {!orderPlaced ? (
+        <>
+          {/* CATEGORY */}
+          <div style={{ display: "flex", gap: 10 }}>
+            {Object.keys(FOOD_DATA).map(cat => (
               <button
-                style={{ ...btnStyle, marginTop: "10px" }}
-                onClick={() => {
-                    setOrderPlaced(true);
-                    setHistory([
-                        {
-                          name: cart.map(i => i.name).join(", "),
-                          amount: total
-                       },
-                       ...history
-                ]);
-               setCart([]);
-             }}
-
+                key={cat}
+                onClick={() => setCategory(cat)}
               >
-                Place Order
+                {cat}
               </button>
-            ) : (
-              <ActiveQR />
-            )}
-          </>
-        )}
-      </div>
+            ))}
+          </div>
 
-      {/* FOOD HISTORY */}
-      <div style={{ marginTop: "50px" }}>
-        <h2>📦 Food Order History</h2>
-        <p>Veg Meals — ₹80 — Collected</p>
-        <p>Samosa — ₹15 — Collected</p>
-        <p>Coffee — ₹15 — Collected</p>
-      </div>
+          {/* FOOD LIST */}
+          <div style={{ display: "flex", gap: 20, marginTop: 20 }}>
+            {FOOD_DATA[category].map(item => (
+              <div key={item.id} style={card}>
+                <h3>{item.name}</h3>
+                <p>₹ {item.price}</p>
+                <button onClick={() => addToCart(item)}>
+                  Add to cart
+                </button>
+              </div>
+            ))}
+          </div>
+
+          {cart.length > 0 && (
+            <button
+             style={{ marginTop: 20 }}
+                onClick={() => navigate("/canteen/cart")}
+               >
+             Go to Cart ({cart.length})
+            </button>
+
+          )}
+
+          {/* RECENT ORDERS */}
+          <h3 style={{ marginTop: 40 }}>Recent Orders</h3>
+          {history.slice(0, 3).map(o => (
+            <p key={o.id}>
+              Order #{o.id} — ₹{o.total}
+            </p>
+          ))}
+        </>
+      )}
+
+
+      {order && (
+
+        <>
+          <h2>✅ Order Placed</h2>
+          <p>Order ID: {order.id}</p>
+          <p>Status: {order.status}</p>
+          <p>Your order will be ready in 10–30 minutes</p>
+
+          {order.status === "Ready" && (
+            <div style={qrBox}>
+              <p>Show QR at canteen</p>
+              <div style={qr}>QR CODE</div>
+              <button
+                onClick={() =>
+                  setOrder(o => ({ ...o, status: "Collected" }))
+                }
+              >
+                Simulate Scan
+              </button>
+            </div>
+          )}
+
+          {order.status === "Collected" && (
+            <p>🍽 Order Collected</p>
+          )}
+
+          <button onClick={() => setScreen("FOOD")}>
+            Back to Canteen
+          </button>
+        </>
+      )}
     </div>
   );
 }
 
-/* -------------------- COMPONENTS -------------------- */
+/* -------- STYLES -------- */
 
-function ActiveQR() {
-  const [visible, setVisible] = useState(true);
-
-  if (!visible) return <p>✅ Order collected</p>;
-
-  return (
-    <div style={qrBox}>
-      <p><b>Show this QR at canteen</b></p>
-      <div style={qrFake}>QR CODE</div>
-      <button
-        onClick={() => setVisible(false)}
-        style={{ ...btnStyle, marginTop: "10px" }}
-      >
-        Simulate Scan
-      </button>
-    </div>
-  );
-}
-
-/* -------------------- STYLES -------------------- */
-
-const cardStyle = {
+const card = {
   background: "white",
-  padding: "16px",
-  borderRadius: "12px",
-  width: "180px",
-  boxShadow: "0 4px 10px rgba(0,0,0,0.1)"
-};
-
-const btnStyle = {
-  padding: "8px 12px",
-  border: "none",
-  borderRadius: "6px",
-  background: "#111",
-  color: "white",
-  cursor: "pointer"
+  padding: 16,
+  borderRadius: 10,
+  width: 160
 };
 
 const qrBox = {
-  marginTop: "20px",
-  padding: "20px",
+  marginTop: 20,
+  padding: 20,
   background: "#fff",
-  borderRadius: "12px",
-  width: "220px"
+  width: 200
 };
 
-const qrFake = {
-  height: "120px",
+const qr = {
+  height: 100,
   background: "#ddd",
   display: "flex",
   alignItems: "center",
-  justifyContent: "center",
-  fontWeight: "bold"
+  justifyContent: "center"
 };
