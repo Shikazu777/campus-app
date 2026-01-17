@@ -22,6 +22,7 @@ export default function Canteen() {
   const [category, setCategory] = useState("Meals");
   const [cart, setCart] = useState([]);
   const [orderPlaced, setOrderPlaced] = useState(false);
+  const [history, setHistory] = useState([]);
 
   // TEMP: simulate trust tier
   const trustTier = "Normal"; // Weak / Normal / Good
@@ -95,7 +96,18 @@ export default function Canteen() {
             {!orderPlaced ? (
               <button
                 style={{ ...btnStyle, marginTop: "10px" }}
-                onClick={() => setOrderPlaced(true)}
+                onClick={() => {
+                    setOrderPlaced(true);
+                    setHistory([
+                        {
+                          name: cart.map(i => i.name).join(", "),
+                          amount: total
+                       },
+                       ...history
+                ]);
+               setCart([]);
+             }}
+
               >
                 Place Order
               </button>
