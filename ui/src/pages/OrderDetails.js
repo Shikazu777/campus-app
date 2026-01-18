@@ -6,6 +6,7 @@ export default function OrderDetails() {
   const [order, setOrder] = useState(null);
 
   useEffect(() => {
+  const fetchOrder = () => {
     fetch(`http://localhost:8000/canteen/order/${id}`)
       .then(res => res.json())
       .then(data => {
@@ -13,7 +14,14 @@ export default function OrderDetails() {
           setOrder(data);
         }
       });
-  }, [id]);
+  };
+
+  fetchOrder(); // initial load
+  const interval = setInterval(fetchOrder, 5000); // poll every 5s
+
+  return () => clearInterval(interval);
+}, [id]);
+
 
   if (!order) {
     return <p>❌ Order not found</p>;

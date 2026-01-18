@@ -7,7 +7,8 @@ export default function Cart() {
   const { cart, updateQty, total, clearCart } = useCart();
 
   const placeOrder = async () => {
-  const res = await fetch("http://localhost:8000/canteen/order", {
+  // 1. Create order
+  const orderRes = await fetch("http://localhost:8000/canteen/order", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -16,10 +17,27 @@ export default function Cart() {
     })
   });
 
-  const data = await res.json();
+  const orderData = await orderRes.json();
+
+  // 2. Create payment
+  const payRes = await fetch("http://localhost:8000/payment/create", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      order_id: orderData.order_id
+    })
+  });
+
+  const payData = await payRes.json();
+
   clearCart();
-  navigate(`/canteen/order/${data.order_id}`);
-};
+
+  // 3. Redirect to payment page
+  window.location.href = payData.payment_url;
+  };
+
+
+
 
 
   return (

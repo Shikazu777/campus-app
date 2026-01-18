@@ -175,6 +175,83 @@ def scan_canteen_qr(qr_token: str, db: Session = Depends(get_db)):
 
 #     return {"message": "Order collected successfully"}
 
+@app.post("/canteen/order/{order_id}/start")
+def start_preparing(order_id: int, db: Session = Depends(get_db)):
+    order = db.query(CanteenOrder).filter(
+        CanteenOrder.id == order_id
+    ).first()
+
+    if not order:
+        return {"error": "Order not found"}
+
+    if order.status != "PENDING":
+        return {"error": "Order already started"}
+
+    order.status = "PREPARING"
+    db.commit()
+
+    return {"message": "Order is now preparing"}
+
+@app.post("/payment/create")
+def create_payment(order_id: int, db: Session = Depends(get_db)):
+    order = db.query(CanteenOrder).filter(
+        CanteenOrder.id == order_id
+    ).first()
+
+    if not order:
+        return {"error": "Order not found"}
+
+    if order.status != "PENDING":
+        return {"error": "Payment already processed"}
+
+    # MOCK payment redirect URL
+    payment_url = f"http://localhost:3000/payment/mock/{order.id}"
+
+    return {
+        "order_id": order.id,
+        "payment_url": payment_url
+
+    }
+
+@app.post("/payment/success")
+def payment_success(order_id: int, db: Session = Depends(get_db)):
+    order = db.query(CanteenOrder).filter(
+        CanteenOrder.id == order_id
+    ).first()
+
+    if not order:
+        return {"error": "Order not found"}
+
+    order.status = "PREPARING"
+    db.commit()
+
+    return {
+        "message": "Payment confirmed",
+        "order_id": order.id
+    }
+
+
+
+@app.post("/canteen/order/{order_id}/ready")
+def mark_order_ready(order_id: int, db: Session = Depends(get_db)):
+    order = db.query(CanteenOrder).filter(
+        CanteenOrder.id == order_id
+    ).first()
+
+    if not order:
+        return {"error": "Order not found"}
+
+    order.status = "READY"
+    order.qr_token = generate_qr_token("CANTEEN")
+    db.commit()
+
+    return {
+        "message": "Order ready",
+        "qr_token": order.qr_token
+    }
+
+
+
 
 @app.post("/event/create")
 def create_event(

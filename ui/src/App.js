@@ -3,10 +3,13 @@ import Sidebar from "./components/Sidebar";
 import Canteen from "./pages/Canteen";
 import Cart from "./pages/Cart";
 import OrderDetails from "./pages/OrderDetails";
+import MockPayment from "./pages/MockPayment";
 import Events from "./pages/Events";
 import Bookings from "./pages/Bookings";
 import { CartProvider } from "./context/CartContext";
 import { OrderProvider } from "./context/OrderContext";
+import MockPayment from "./pages/MockPayment";
+
 
 
 
@@ -33,8 +36,8 @@ export default function App() {
           <Routes>
             <Route path="/canteen" element={<Canteen />} />
             <Route path="/canteen/cart" element={<Cart />} />
+            <Route path="/payment/mock/:orderId" element={<MockPayment />} />
             <Route path="/canteen/order/:id" element={<OrderDetails />} />
-
             <Route path="/events" element={<Events />} />
             <Route path="/bookings" element={<Bookings />} />
           </Routes>
