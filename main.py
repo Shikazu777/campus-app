@@ -9,6 +9,8 @@ from qr_utils import generate_qr_token
 from fastapi.middleware.cors import CORSMiddleware
 from models import User
 from rbac import has_role
+import time
+from threading import Thread
 
 
 app = FastAPI()
@@ -284,6 +286,30 @@ def mark_order_ready(order_id: int, db: Session = Depends(get_db)):
         "qr_token": order.qr_token
     }
 
+def simulate_order_flow(order_id: int):
+    db = SessionLocal()
+    try:
+        time.sleep(5)  # simulate payment
+        order = db.query(CanteenOrder).filter(CanteenOrder.id == order_id).first()
+        if not order:
+            return
+
+        order.status = "PREPARING"
+        order.qr_token = generate_qr_token("CANTEEN")
+        db.commit()
+
+        time.sleep(10)  # simulate preparation time
+        order.status = "READY"
+        db.commit()
+    finally:
+        db.close()
+
+
+@app.post("/canteen/order/{order_id}/simulate")
+def simulate_order(order_id: int):
+    thread = Thread(target=simulate_order_flow, args=(order_id,))
+    thread.start()
+    return {"message": "Order simulation started"}
 
 
 

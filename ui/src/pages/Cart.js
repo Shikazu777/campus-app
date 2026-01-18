@@ -19,6 +19,9 @@ export default function Cart() {
 
   const orderData = await orderRes.json();
 
+
+
+
   // 2. Create payment
   const payRes = await fetch("http://localhost:8000/payment/create", {
     method: "POST",
@@ -26,10 +29,16 @@ export default function Cart() {
     body: JSON.stringify({
       order_id: orderData.order_id
     })
+    
   });
 
   const payData = await payRes.json();
+  
+  await fetch(`http://localhost:8000/canteen/order/${orderId}/simulate`, {
+  method: "POST"
+});
 
+navigate(`/canteen/order/${orderId}`);
   
 
   // 3. Redirect to payment page
