@@ -52,42 +52,79 @@ def simulate_payment(student_id: int, amount: float, status: str, db: Session = 
         "trust_tier": tier
     }
 
-@app.post("/canteen/preorder")
-def canteen_preorder(
+@app.post("/canteen/order")
+def create_canteen_order(
     student_id: int,
-    item: str,
-    amount: float,
+    total_amount: float,
     db: Session = Depends(get_db)
 ):
-    student = db.query(Student).filter(Student.id == student_id).first()
-
-    if student.trust_tier == "Weak":
-        return {"error": "Pre-order not allowed for your trust tier"}
-
-    if student.trust_tier == "Normal":
-        advance = amount * 0.5
-    else:  # Good
-        advance = 0.0
-
     order = CanteenOrder(
-    student_id=student_id,
-    item=item,
-    total_amount=amount,
-    advance_paid=advance,
-    status="created",
-    qr_token=generate_qr_token("CANTEEN")
-   )
-
+        student_id=student_id,
+        total_amount=total_amount,
+        status="PENDING"
+    )
     db.add(order)
     db.commit()
+    db.refresh(order)
 
     return {
-        "message": "Pre-order created",
         "order_id": order.id,
-        "qr_token": order.qr_token,
-        "advance_to_pay": advance,
         "status": order.status
     }
+
+@app.get("/canteen/order/{order_id}")
+def get_canteen_order(order_id: int, db: Session = Depends(get_db)):
+    order = db.query(CanteenOrder).filter(
+        CanteenOrder.id == order_id
+    ).first()
+
+    if not order:
+        return {"error": "Order not found"}
+
+    return {
+        "id": order.id,
+        "total": order.total_amount,
+        "status": order.status,
+        "qr_token": order.qr_token
+    }
+
+
+# @app.post("/canteen/preorder")
+# def canteen_preorder(
+#     student_id: int,
+#     item: str,
+#     amount: float,
+#     db: Session = Depends(get_db)
+# ):
+#     student = db.query(Student).filter(Student.id == student_id).first()
+
+#     if student.trust_tier == "Weak":
+#         return {"error": "Pre-order not allowed for your trust tier"}
+
+#     if student.trust_tier == "Normal":
+#         advance = amount * 0.5
+#     else:  # Good
+#         advance = 0.0
+
+#     order = CanteenOrder(
+#     student_id=student_id,
+#     item=item,
+#     total_amount=amount,
+#     advance_paid=advance,
+#     status="created",
+#     qr_token=generate_qr_token("CANTEEN")
+#    )
+
+#     db.add(order)
+#     db.commit()
+
+#     return {
+#         "message": "Pre-order created",
+#         "order_id": order.id,
+#         "qr_token": order.qr_token,
+#         "advance_to_pay": advance,
+#         "status": order.status
+#     }
 
 @app.post("/canteen/mark-ready")
 def mark_ready(order_id: int, current_user_id: int, db: Session = Depends(get_db)):
@@ -100,7 +137,9 @@ def mark_ready(order_id: int, current_user_id: int, db: Session = Depends(get_db
     if not order:
         return {"error": "Order not found"}
 
-    order.status = "ready"
+    order.status = "READY"
+    order.qr_token = generate_qr_token("CANTEEN")
+
     db.commit()
 
     return {"message": "Order marked ready"}
@@ -111,29 +150,30 @@ def scan_canteen_qr(qr_token: str, db: Session = Depends(get_db)):
         CanteenOrder.qr_token == qr_token
     ).first()
 
-    if not order or order.status != "ready":
+    if not order or order.status != "READY":
         return {"error": "Invalid or not ready"}
 
-    order.status = "collected"
+    order.status = "COLLECTED"
+
     db.commit()
     return {"message": "Order collected"}
 
 
 
-@app.post("/canteen/collect")
-def collect_order(order_id: int, db: Session = Depends(get_db)):
-    order = db.query(CanteenOrder).filter(CanteenOrder.id == order_id).first()
+# @app.post("/canteen/collect")
+# def collect_order(order_id: int, db: Session = Depends(get_db)):
+#     order = db.query(CanteenOrder).filter(CanteenOrder.id == order_id).first()
 
-    if not order:
-         return {"error": "Order not found"}
+#     if not order:
+#          return {"error": "Order not found"}
 
-    if order.status != "ready":
-         return {"error": "Order not ready yet"}
+#     if order.status != "ready":
+#          return {"error": "Order not ready yet"}
 
-    order.status = "collected"
-    db.commit()
+#     order.status = "collected"
+#     db.commit()
 
-    return {"message": "Order collected successfully"}
+#     return {"message": "Order collected successfully"}
 
 
 @app.post("/event/create")

@@ -6,11 +6,21 @@ export default function Cart() {
 
   const { cart, updateQty, total, clearCart } = useCart();
 
-  const placeOrder = () => {
-    const orderId = Math.floor(Math.random() * 100000);
-    clearCart();
-    navigate(`/canteen/order/${orderId}`);
-  };
+  const placeOrder = async () => {
+  const res = await fetch("http://localhost:8000/canteen/order", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      student_id: 1,
+      total_amount: total
+    })
+  });
+
+  const data = await res.json();
+  clearCart();
+  navigate(`/canteen/order/${data.order_id}`);
+};
+
 
   return (
     <div>

@@ -26,12 +26,12 @@ class Transaction(Base):
 class CanteenOrder(Base):
     __tablename__ = "canteen_orders"
     id = Column(Integer, primary_key=True)
-    student_id = Column(Integer)
+    student_id = Column(Integer, nullable=False)
     item = Column(String)
-    total_amount = Column(Float)
+    total_amount = Column(Float, nullable=False)
     advance_paid = Column(Float)
-    status = Column(String)
-    qr_token = Column(String, unique=True)   
+    status = Column(String, default="PENDING")
+    qr_token = Column(String, unique=True, nullable=True)   
     created_at = Column(DateTime, default=datetime.utcnow)
 
 class Event(Base):

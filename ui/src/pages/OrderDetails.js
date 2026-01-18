@@ -1,11 +1,19 @@
 import { useParams } from "react-router-dom";
-import { useOrders } from "../context/OrderContext";
+import { useEffect, useState } from "react";
 
 export default function OrderDetails() {
   const { id } = useParams();
-  const { getOrderById, updateOrderStatus } = useOrders();
+  const [order, setOrder] = useState(null);
 
-  const order = getOrderById(id);
+  useEffect(() => {
+    fetch(`http://localhost:8000/canteen/order/${id}`)
+      .then(res => res.json())
+      .then(data => {
+        if (!data.error) {
+          setOrder(data);
+        }
+      });
+  }, [id]);
 
   if (!order) {
     return <p>❌ Order not found</p>;
@@ -18,32 +26,22 @@ export default function OrderDetails() {
       <p>Status: <b>{order.status}</b></p>
       <p>Total: ₹{order.total}</p>
 
-      <h3>Items</h3>
-      {order.items.map(i => (
-        <p key={i.id}>
-          {i.name} × {i.qty} — ₹{i.price * i.qty}
-        </p>
-      ))}
+      {order.status === "PENDING" && (
+        <p>Waiting for payment confirmation.</p>
+      )}
 
-      {order.status === "Preparing" && (
+      {order.status === "PREPARING" && (
         <p>Your order is being prepared.</p>
       )}
 
-      {order.status === "Ready" && (
+      {order.status === "READY" && (
         <div style={qrBox}>
           <p>Show this QR at canteen</p>
           <div style={qr}>QR CODE</div>
-          <button
-            onClick={() =>
-              updateOrderStatus(order.id, "Collected")
-            }
-          >
-            Simulate Scan
-          </button>
         </div>
       )}
 
-      {order.status === "Collected" && (
+      {order.status === "COLLECTED" && (
         <p>🍽 Order Collected</p>
       )}
     </div>
