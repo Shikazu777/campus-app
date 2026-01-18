@@ -108,7 +108,16 @@ export default function Canteen() {
              Order #{o.id} — ₹{o.total}
            </p>
 
+           
+
           ))}
+          <button
+  style={{ marginTop: 20 }}
+  onClick={() => navigate("/canteen/history")}
+>
+  View Full History →
+</button>
+
         </>
       )}
 

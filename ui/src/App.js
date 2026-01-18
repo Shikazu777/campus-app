@@ -8,8 +8,7 @@ import Events from "./pages/Events";
 import Bookings from "./pages/Bookings";
 import { CartProvider } from "./context/CartContext";
 import { OrderProvider } from "./context/OrderContext";
-import MockPayment from "./pages/MockPayment";
-
+import CanteenHistory from "./pages/CanteenHistory";
 
 
 
@@ -38,6 +37,8 @@ export default function App() {
             <Route path="/canteen/cart" element={<Cart />} />
             <Route path="/payment/mock/:orderId" element={<MockPayment />} />
             <Route path="/canteen/order/:id" element={<OrderDetails />} />
+            <Route path="/canteen/history" element={<CanteenHistory />} />
+
             <Route path="/events" element={<Events />} />
             <Route path="/bookings" element={<Bookings />} />
           </Routes>

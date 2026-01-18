@@ -30,7 +30,7 @@ export default function Cart() {
 
   const payData = await payRes.json();
 
-  clearCart();
+  
 
   // 3. Redirect to payment page
   window.location.href = payData.payment_url;

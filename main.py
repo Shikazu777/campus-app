@@ -28,6 +28,20 @@ def register_student(email: str, db: Session = Depends(get_db)):
     db.commit()
     return {"message": "Student registered"}
 
+@app.get("/ui/students")
+def get_students(db: Session = Depends(get_db)):
+    students = db.query(Student).all()
+
+    result = []
+    for s in students:
+        result.append({
+            "id": s.id,
+            "email": s.email,
+            "trust_score": s.trust_score,
+            "trust_tier": s.trust_tier,
+            "risky": s.trust_score < 40
+        })
+
 
 @app.post("/pay")
 def simulate_payment(student_id: int, amount: float, status: str, db: Session = Depends(get_db)):
@@ -87,6 +101,26 @@ def get_canteen_order(order_id: int, db: Session = Depends(get_db)):
         "status": order.status,
         "qr_token": order.qr_token
     }
+
+@app.get("/canteen/orders/student/{student_id}")
+def get_student_orders(student_id: int, db: Session = Depends(get_db)):
+    orders = (
+        db.query(CanteenOrder)
+        .filter(CanteenOrder.student_id == student_id)
+        .order_by(CanteenOrder.created_at.desc())
+        .all()
+    )
+
+    return [
+        {
+            "id": o.id,
+            "total": o.total_amount,
+            "status": o.status,
+            "created_at": o.created_at,
+        }
+        for o in orders
+    ]
+
 
 
 # @app.post("/canteen/preorder")
@@ -393,19 +427,7 @@ def cancel_event(registration_id: int, db: Session = Depends(get_db)):
 
 
 
-@app.get("/ui/students")
-def get_students(db: Session = Depends(get_db)):
-    students = db.query(Student).all()
 
-    result = []
-    for s in students:
-        result.append({
-            "id": s.id,
-            "email": s.email,
-            "trust_score": s.trust_score,
-            "trust_tier": s.trust_tier,
-            "risky": s.trust_score < 40
-        })
 
     return result
 
