@@ -322,10 +322,13 @@ def simulate_order(order_id: int):
 
 @app.post("/event/create")
 def create_event(
-    current_user_id: int,
     name: str,
-    fee: float,
+    description: str,
+    department: str,
+    eligibility: str,
     event_time: datetime,
+    registration_deadline: datetime,
+    current_user_id: int,
     db: Session = Depends(get_db)
 ):
     user = db.query(User).filter(User.id == current_user_id).first()
@@ -335,23 +338,65 @@ def create_event(
 
     event = Event(
         name=name,
-        fee=fee,
-        event_time=event_time
+        description=description,
+        department=department,
+        eligibility=eligibility,
+        event_time=event_time,
+        registration_deadline=registration_deadline
     )
 
     db.add(event)
     db.commit()
+    db.refresh(event)
 
-    return {"message": "Event created", "event_id": event.id}
+    return {
+        "event_id": event.id,
+        "message": "Event created"
+    }
 
-    
+@app.get("/events")
+def list_events(db: Session = Depends(get_db)):
+    now = datetime.utcnow()
+
+    events = db.query(Event).filter(
+        Event.is_active == True,
+        Event.event_time >= now
+    ).all()
+
+    return events
+
+@app.get("/events/{event_id}")
+def get_event(event_id: int, db: Session = Depends(get_db)):
+    event = db.query(Event).filter(Event.id == event_id).first()
+
+    if not event:
+        return {"error": "Event not found"}
+
+    now = datetime.utcnow()
+
+    registration_open = now <= event.registration_deadline
+    is_closed = now > event.event_time + timedelta(days=2)
+
+    return {
+        "id": event.id,
+        "name": event.name,
+        "description": event.description,
+        "department": event.department,
+        "eligibility": event.eligibility,
+        "event_time": event.event_time,
+        "registration_deadline": event.registration_deadline,
+        "registration_open": registration_open,
+        "closed": is_closed
+    }
+
+
 
 @app.post("/event/register")
 def register_event(student_id: int, event_id: int, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.id == student_id).first()
+    event = db.query(Event).filter(Event.id == event_id).first()
 
-    if user.user_type != "student":
-        return {"error": "Only students can buy tickets"}
+    if datetime.utcnow() > event.registration_deadline:
+        return {"error": "Registration closed"}
 
     reg = EventRegistration(
         student_id=student_id,
