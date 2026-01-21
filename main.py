@@ -11,6 +11,7 @@ from models import User
 from rbac import has_role
 import time
 from threading import Thread
+from pydantic import BaseModel
 
 
 app = FastAPI()
@@ -68,15 +69,18 @@ def simulate_payment(student_id: int, amount: float, status: str, db: Session = 
         "trust_tier": tier
     }
 
+class CanteenOrderCreate(BaseModel):
+    student_id: int
+    total_amount: float
+
 @app.post("/canteen/order")
 def create_canteen_order(
-    student_id: int,
-    total_amount: float,
+    payload: CanteenOrderCreate,
     db: Session = Depends(get_db)
 ):
     order = CanteenOrder(
-        student_id=student_id,
-        total_amount=total_amount,
+        student_id=payload.student_id,
+        total_amount=payload.total_amount,
         status="PENDING"
     )
     db.add(order)
@@ -87,6 +91,9 @@ def create_canteen_order(
         "order_id": order.id,
         "status": order.status
     }
+
+
+
 
 @app.get("/canteen/order/{order_id}")
 def get_canteen_order(order_id: int, db: Session = Depends(get_db)):

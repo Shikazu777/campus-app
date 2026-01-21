@@ -6,9 +6,9 @@ export default function Cart() {
 
   const { cart, updateQty, total, clearCart } = useCart();
 
-  const placeOrder = async () => {
+ const placeOrder = async () => {
   // 1. Create order
-  const orderRes = await fetch("http://localhost:8000/canteen/order", {
+  const res = await fetch("http://localhost:8000/canteen/order", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -17,33 +17,18 @@ export default function Cart() {
     })
   });
 
-  const orderData = await orderRes.json();
+  const data = await res.json();
+  const orderId = data.order_id; // ✅ DEFINE IT HERE
 
+  // 2. Start demo simulation (payment + prep)
+  await fetch(
+    `http://localhost:8000/canteen/order/${orderId}/simulate`,
+    { method: "POST" }
+  );
 
-
-
-  // 2. Create payment
-  const payRes = await fetch("http://localhost:8000/payment/create", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      order_id: orderData.order_id
-    })
-    
-  });
-
-  const payData = await payRes.json();
-  
-  await fetch(`http://localhost:8000/canteen/order/${orderId}/simulate`, {
-  method: "POST"
-});
-
-navigate(`/canteen/order/${orderId}`);
-  
-
-  // 3. Redirect to payment page
-  window.location.href = payData.payment_url;
-  };
+  // 3. Go to order page
+  navigate(`/canteen/order/${orderId}`);
+};
 
 
 
