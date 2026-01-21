@@ -4,7 +4,7 @@ from database import SessionLocal
 from models import Student, Transaction, CanteenOrder
 from models import Event, EventRegistration
 from scoring import update_trust_score
-from datetime import datetime
+from datetime import datetime, timedelta
 from qr_utils import generate_qr_token
 from fastapi.middleware.cors import CORSMiddleware
 from models import User
@@ -45,6 +45,8 @@ def get_students(db: Session = Depends(get_db)):
             "risky": s.trust_score < 40
         })
 
+    return result
+
 
 @app.post("/pay")
 def simulate_payment(student_id: int, amount: float, status: str, db: Session = Depends(get_db)):
@@ -83,6 +85,7 @@ def create_canteen_order(
         total_amount=payload.total_amount,
         status="PENDING"
     )
+
     db.add(order)
     db.commit()
     db.refresh(order)
@@ -91,6 +94,7 @@ def create_canteen_order(
         "order_id": order.id,
         "status": order.status
     }
+
 
 
 
@@ -131,44 +135,6 @@ def get_student_orders(student_id: int, db: Session = Depends(get_db)):
     ]
 
 
-
-# @app.post("/canteen/preorder")
-# def canteen_preorder(
-#     student_id: int,
-#     item: str,
-#     amount: float,
-#     db: Session = Depends(get_db)
-# ):
-#     student = db.query(Student).filter(Student.id == student_id).first()
-
-#     if student.trust_tier == "Weak":
-#         return {"error": "Pre-order not allowed for your trust tier"}
-
-#     if student.trust_tier == "Normal":
-#         advance = amount * 0.5
-#     else:  # Good
-#         advance = 0.0
-
-#     order = CanteenOrder(
-#     student_id=student_id,
-#     item=item,
-#     total_amount=amount,
-#     advance_paid=advance,
-#     status="created",
-#     qr_token=generate_qr_token("CANTEEN")
-#    )
-
-#     db.add(order)
-#     db.commit()
-
-#     return {
-#         "message": "Pre-order created",
-#         "order_id": order.id,
-#         "qr_token": order.qr_token,
-#         "advance_to_pay": advance,
-#         "status": order.status
-#     }
-
 @app.post("/canteen/mark-ready")
 def mark_ready(order_id: int, current_user_id: int, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.id == current_user_id).first()
@@ -203,20 +169,6 @@ def scan_canteen_qr(qr_token: str, db: Session = Depends(get_db)):
 
 
 
-# @app.post("/canteen/collect")
-# def collect_order(order_id: int, db: Session = Depends(get_db)):
-#     order = db.query(CanteenOrder).filter(CanteenOrder.id == order_id).first()
-
-#     if not order:
-#          return {"error": "Order not found"}
-
-#     if order.status != "ready":
-#          return {"error": "Order not ready yet"}
-
-#     order.status = "collected"
-#     db.commit()
-
-#     return {"message": "Order collected successfully"}
 
 @app.post("/canteen/order/{order_id}/start")
 def start_preparing(order_id: int, db: Session = Depends(get_db)):
@@ -399,11 +351,12 @@ def register_event(student_id: int, event_id: int, db: Session = Depends(get_db)
         return {"error": "Registration closed"}
 
     reg = EventRegistration(
-        student_id=student_id,
-        event_id=event_id,
-        status="registered",
-        qr_token=generate_qr_token("EVENT")
-    )
+    student_id=student_id,
+    event_id=event_id,
+    status="PENDING",
+    qr_token=None
+)
+
 
     db.add(reg)
     db.commit()
@@ -421,8 +374,8 @@ def scan_event_qr(qr_token: str, db: Session = Depends(get_db)):
         EventRegistration.qr_token == qr_token
     ).first()
 
-    if not reg or reg.status != "registered":
-        return {"error": "Invalid ticket"}
+    if not reg or reg.status != "CONFIRMED":
+         return {"error": "Invalid or inactive ticket"}
 
     reg.status = "attended"
     db.commit()
@@ -467,17 +420,7 @@ def no_show(registration_id: int, db: Session = Depends(get_db)):
         "trust_tier": student.trust_tier
     }
 
-@app.post("/event/transfer")
-def transfer_ticket(registration_id: int, to_student_id: int, db: Session = Depends(get_db)):
-    reg = db.query(EventRegistration).filter(EventRegistration.id == registration_id).first()
 
-    if not reg or reg.status != "registered":
-        return {"error": "Transfer not allowed"}
-
-    reg.transferred_to = to_student_id
-    db.commit()
-
-    return {"message": "Ticket transferred"}
 
 @app.post("/event/cancel")
 def cancel_event(registration_id: int, db: Session = Depends(get_db)):
@@ -504,10 +447,32 @@ def cancel_event(registration_id: int, db: Session = Depends(get_db)):
     }
 
 
+# ---- utilities ----
+
+def auto_close_events():
+    db = SessionLocal()
+    try:
+        cutoff = datetime.utcnow() - timedelta(days=2)
+        events = db.query(Event).filter(
+            Event.event_time < cutoff,
+            Event.is_active == True
+        ).all()
+
+        for e in events:
+            e.is_active = False
+
+        db.commit()
+    finally:
+        db.close()
 
 
 
-    return result
+   
+
+
+@app.on_event("startup")
+def startup_tasks():
+    auto_close_events()
 
 
 app.add_middleware(

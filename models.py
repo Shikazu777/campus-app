@@ -39,10 +39,13 @@ class Event(Base):
 
     id = Column(Integer, primary_key=True)
     name = Column(String)
-    fee = Column(Float)
-    total_tickets = Column(Integer, nullable=True)  # NULL = unlimited
-    tickets_sold = Column(Integer, default=0)
+    description = Column(String)
+    department = Column(String)
+    eligibility = Column(String)
     event_time = Column(DateTime)
+    registration_deadline = Column(DateTime)
+    is_active = Column(Boolean, default=True)  # ✅ ADD THIS
+    created_at = Column(DateTime, default=datetime.utcnow)
 
 
 
