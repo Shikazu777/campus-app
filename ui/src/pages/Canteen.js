@@ -5,7 +5,7 @@ import "../styles/global.css";
 
 export default function Canteen() {
   const navigate = useNavigate();
-  const { cart, addToCart, total } = useCart();
+  const { cart, addToCart, total, clearCart } = useCart();
 
   const [items, setItems] = useState([]);
   const [category, setCategory] = useState("Meals");
@@ -32,7 +32,7 @@ export default function Canteen() {
   /* ---------------- PAYMENT FLOW ---------------- */
 
   const makePayment = async () => {
-    // 1. Create order
+    // Create order
     const res = await fetch("http://localhost:8000/canteen/order", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -45,7 +45,7 @@ export default function Canteen() {
     const data = await res.json();
     const orderId = data.order_id;
 
-    // 2. Simulate payment delay (7 sec)
+    // Simulate payment delay (7s)
     setTimeout(async () => {
       await fetch("http://localhost:8000/payment/success", {
         method: "POST",
@@ -53,6 +53,7 @@ export default function Canteen() {
         body: JSON.stringify({ order_id: orderId })
       });
 
+      clearCart();
       navigate(`/canteen/order/${orderId}`);
     }, 7000);
   };
@@ -60,7 +61,6 @@ export default function Canteen() {
   return (
     <div className="app">
       <main className="main">
-        {/* HEADER */}
         <div className="page-header">
           <h1 className="page-title">Canteen Menu</h1>
         </div>
@@ -78,31 +78,34 @@ export default function Canteen() {
           ))}
         </div>
 
-        {/* FOOD ITEMS */}
+        {/* ITEMS */}
         <div className="card-grid">
-          {items.map(item => (
-            <div key={item.id} className="card item-card">
-              <img src={item.image_url} className="food-image" />
-              <div className="item-title">{item.name}</div>
-              <div className="item-price">₹ {item.price}</div>
+          {items.map(item => {
+            const disabled = !item.is_available || item.stock <= 0;
 
-              {item.is_available && item.stock > 0 ? (
+            return (
+              <div key={item.id} className="card item-card">
+                <img
+                  src={item.image_url}
+                  alt={item.name}
+                  className="food-image"
+                />
+                <div className="item-title">{item.name}</div>
+                <div className="item-price">₹ {item.price}</div>
+
                 <button
                   className="btn btn-success"
+                  disabled={disabled}
                   onClick={() => addToCart(item)}
                 >
-                  Add to Cart
+                  {disabled ? "Out of Stock" : "Add to Cart"}
                 </button>
-              ) : (
-                <button disabled className="btn">
-                  Out of Stock
-                </button>
-              )}
-            </div>
-          ))}
+              </div>
+            );
+          })}
         </div>
 
-        {/* CART SUMMARY */}
+        {/* CART */}
         {cart.length > 0 && (
           <div className="card" style={{ marginTop: 24 }}>
             <h3>Total: ₹ {total}</h3>

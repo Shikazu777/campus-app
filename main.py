@@ -1,7 +1,7 @@
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, HTTPException, Depends
 from sqlalchemy.orm import Session
 from database import SessionLocal
-from models import Student, Transaction, CanteenOrder
+from models import Student, Transaction, CanteenOrder, CanteenOrderItem
 from models import Event, EventRegistration
 from scoring import update_trust_score
 from datetime import datetime, timedelta
@@ -12,6 +12,8 @@ from rbac import has_role
 import time
 from threading import Thread
 from pydantic import BaseModel
+from models import CanteenItem
+
 
 
 app = FastAPI()
@@ -75,14 +77,152 @@ class CanteenOrderCreate(BaseModel):
     student_id: int
     total_amount: float
 
+
+class CanteenItemCreate(BaseModel):
+    name: str
+    price: float
+    image_url: str | None = None
+    category: str
+    stock: int
+
+@app.get("/canteen/items")
+def get_canteen_items(
+    category: str | None = None,
+    db: Session = Depends(get_db)
+):
+    q = db.query(CanteenItem)
+
+    if category:
+        q = q.filter(CanteenItem.category == category)
+
+    return q.all()
+
+
+
+@app.post("/canteen/items")
+def add_canteen_item(
+    payload: CanteenItemCreate,
+    current_user_id: int,
+    db: Session = Depends(get_db)
+):
+    user = db.query(User).filter(User.id == current_user_id).first()
+
+    if user.user_type != "owner" and not has_role(user, "CANTEEN_EDITOR"):
+        return {"error": "Permission denied"}
+
+    item = CanteenItem(**payload.dict())
+    db.add(item)
+    db.commit()
+    db.refresh(item)
+
+    return item
+
+class StockUpdate(BaseModel):
+    stock: int
+
+@app.patch("/canteen/items/{item_id}/stock")
+def update_stock(
+    item_id: int,
+    payload: StockUpdate,
+    current_user_id: int,
+    db: Session = Depends(get_db)
+):
+    user = db.query(User).filter(User.id == current_user_id).first()
+
+    if user.user_type != "owner" and not has_role(user, "CANTEEN_EDITOR"):
+        return {"error": "Permission denied"}
+
+    item = db.query(CanteenItem).filter(CanteenItem.id == item_id).first()
+    if not item:
+        return {"error": "Item not found"}
+
+    item.stock = max(payload.stock, 0)
+    db.commit()
+
+    return {"message": "Stock updated", "stock": item.stock}
+
+class AvailabilityUpdate(BaseModel):
+    is_available: bool
+
+@app.patch("/canteen/items/{item_id}/availability")
+def update_availability(
+    item_id: int,
+    payload: AvailabilityUpdate,
+    current_user_id: int,
+    db: Session = Depends(get_db)
+):
+    user = db.query(User).filter(User.id == current_user_id).first()
+
+    if user.user_type != "owner" and not has_role(user, "CANTEEN_EDITOR"):
+        return {"error": "Permission denied"}
+
+    item = db.query(CanteenItem).filter(CanteenItem.id == item_id).first()
+    if not item:
+        return {"error": "Item not found"}
+
+    item.is_available = payload.is_available
+    db.commit()
+
+    return {"message": "Availability updated"}
+
+class OrderItemPayload(BaseModel):
+    item_id: int
+    qty: int
+
+class CanteenOrderCreate(BaseModel):
+    student_id: int
+    items: list[OrderItemPayload]
+
+@app.get("/canteen/orders")
+def get_all_orders(db: Session = Depends(get_db)):
+    orders = (
+        db.query(CanteenOrder)
+        .order_by(CanteenOrder.created_at.desc())
+        .all()
+    )
+
+    return [
+        {
+            "id": o.id,
+            "total": o.total_amount,
+            "status": o.status,
+            "qr_token": o.qr_token,
+            "created_at": o.created_at
+        }
+        for o in orders
+    ]
+
+
+
 @app.post("/canteen/order")
 def create_canteen_order(
     payload: CanteenOrderCreate,
     db: Session = Depends(get_db)
 ):
+    total = 0
+    items_cache = []
+
+    # 1. Validate & deduct stock
+    for i in payload.items:
+        item = db.query(CanteenItem).filter(CanteenItem.id == i.item_id).first()
+
+        if not item or not item.is_available:
+            raise HTTPException(status_code=400, detail="Item unavailable")
+
+        if item.stock < i.qty:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Insufficient stock for {item.name}"
+            )
+
+        item.stock -= i.qty
+        total += item.price * i.qty
+        items_cache.append((item, i.qty))
+
+    # 2. Create order
     order = CanteenOrder(
         student_id=payload.student_id,
-        total_amount=payload.total_amount,
+        total_amount=total,
         status="PENDING"
     )
 
@@ -90,12 +230,22 @@ def create_canteen_order(
     db.commit()
     db.refresh(order)
 
+    # 3. Create order items
+    for item, qty in items_cache:
+        db.add(CanteenOrderItem(
+            order_id=order.id,
+            item_id=item.id,
+            quantity=qty,
+            price_at_order=item.price
+        ))
+
+    db.commit()
+
     return {
         "order_id": order.id,
+        "total": total,
         "status": order.status
     }
-
-
 
 
 
@@ -170,23 +320,6 @@ def scan_canteen_qr(qr_token: str, db: Session = Depends(get_db)):
 
 
 
-@app.post("/canteen/order/{order_id}/start")
-def start_preparing(order_id: int, db: Session = Depends(get_db)):
-    order = db.query(CanteenOrder).filter(
-        CanteenOrder.id == order_id
-    ).first()
-
-    if not order:
-        return {"error": "Order not found"}
-
-    if order.status != "PENDING":
-        return {"error": "Order already started"}
-
-    order.status = "PREPARING"
-    db.commit()
-
-    return {"message": "Order is now preparing"}
-
 @app.post("/payment/create")
 def create_payment(order_id: int, db: Session = Depends(get_db)):
     order = db.query(CanteenOrder).filter(
@@ -218,13 +351,13 @@ def payment_success(order_id: int, db: Session = Depends(get_db)):
         return {"error": "Order not found"}
 
     order.status = "PREPARING"
+    order.qr_token = generate_qr_token("CANTEEN")
     db.commit()
 
     return {
         "message": "Payment confirmed",
         "order_id": order.id
     }
-
 
 
 @app.post("/canteen/order/{order_id}/ready")
@@ -245,30 +378,6 @@ def mark_order_ready(order_id: int, db: Session = Depends(get_db)):
         "qr_token": order.qr_token
     }
 
-def simulate_order_flow(order_id: int):
-    db = SessionLocal()
-    try:
-        time.sleep(5)  # simulate payment
-        order = db.query(CanteenOrder).filter(CanteenOrder.id == order_id).first()
-        if not order:
-            return
-
-        order.status = "PREPARING"
-        order.qr_token = generate_qr_token("CANTEEN")
-        db.commit()
-
-        time.sleep(10)  # simulate preparation time
-        order.status = "READY"
-        db.commit()
-    finally:
-        db.close()
-
-
-@app.post("/canteen/order/{order_id}/simulate")
-def simulate_order(order_id: int):
-    thread = Thread(target=simulate_order_flow, args=(order_id,))
-    thread.start()
-    return {"message": "Order simulation started"}
 
 
 

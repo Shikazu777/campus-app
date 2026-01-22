@@ -23,6 +23,28 @@ class Transaction(Base):
     timestamp = Column(DateTime, default=datetime.utcnow)
 
 
+class CanteenItem(Base):
+    __tablename__ = "canteen_items"
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String, nullable=False)
+    price = Column(Float, nullable=False)
+    image_url = Column(String)
+    category = Column(String, nullable=False)
+    stock = Column(Integer, default=0)
+    is_available = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+class CanteenOrderItem(Base):
+    __tablename__ = "canteen_order_items"
+
+    id = Column(Integer, primary_key=True)
+    order_id = Column(Integer, ForeignKey("canteen_orders.id", ondelete="CASCADE"))
+    item_id = Column(Integer, ForeignKey("canteen_items.id"))
+    quantity = Column(Integer, nullable=False)
+    price_at_order = Column(Float, nullable=False)
+
+
 class CanteenOrder(Base):
     __tablename__ = "canteen_orders"
     id = Column(Integer, primary_key=True)

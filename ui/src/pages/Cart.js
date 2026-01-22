@@ -7,31 +7,36 @@ export default function Cart() {
   const { cart, updateQty, total, clearCart } = useCart();
 
  const placeOrder = async () => {
-  // 1. Create order
+  const payload = {
+    student_id: 1,
+    items: cart.map(i => ({
+      item_id: i.id,
+      qty: i.qty
+    }))
+  };
+
   const res = await fetch("http://localhost:8000/canteen/order", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      student_id: 1,
-      total_amount: total
-    })
+    body: JSON.stringify(payload)
   });
 
   const data = await res.json();
-  const orderId = data.order_id; // ✅ DEFINE IT HERE
 
-  // 2. Start demo simulation (payment + prep)
-  await fetch(
-    `http://localhost:8000/canteen/order/${orderId}/simulate`,
-    { method: "POST" }
-  );
+  if (data.order_id) {
+    // simulate payment
+    setTimeout(async () => {
+      await fetch("http://localhost:8000/payment/success", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ order_id: data.order_id })
+      });
 
-  // 3. Go to order page
-  navigate(`/canteen/order/${orderId}`);
+      clearCart();
+      navigate(`/canteen/order/${data.order_id}`);
+    }, 7000);
+  }
 };
-
-
-
 
 
   return (
