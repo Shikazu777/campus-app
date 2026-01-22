@@ -50,11 +50,11 @@ const FOOD_DATA = {
 export default function Canteen() {
   const [category, setCategory] = useState("Meals");
   const [cart, setCart] = useState([]);
-  const [recentOrders] = useState([
-    { id: 1032, status: "Ready", date: "Today" },
-    { id: 1030, status: "Collected", date: "Oct 28, 2023" },
-    { id: 1025, status: "No-show", date: "Oct 15, 2023" }
-  ]);
+  const [orders, setOrders] = useState(() => {
+  const saved = localStorage.getItem("canteenOrders");
+  return saved ? JSON.parse(saved) : [];
+});
+
 
   const addToCart = (item) => {
     const exists = cart.find((i) => i.id === item.id);
@@ -103,7 +103,7 @@ export default function Canteen() {
         <div className="card-grid">
           {FOOD_DATA[category].map((item) => (
             <div key={item.id} className="card item-card">
-              <img src={item.img} alt={item.name} />
+              <img src={item.img} alt={item.name} className="food-image" />
               <div className="item-title">{item.name}</div>
               <div className="item-price">₹ {item.price}</div>
               <button
@@ -121,9 +121,39 @@ export default function Canteen() {
           <div className="card" style={{ marginTop: 24 }}>
             <h3>Your order will be ready in 30 minutes</h3>
             <p>Total: ₹ {total}</p>
-            <button className="btn-cta">
-              Proceed to Payment
-            </button>
+            <button
+  className="btn-cta"
+  onClick={() => {
+    const newOrder = {
+      id: Date.now(),
+      items: cart,
+      total,
+      status: "PREPARING",
+      qr: null,
+      createdAt: new Date().toISOString()
+    };
+
+    const updated = [newOrder, ...orders];
+    setOrders(updated);
+    localStorage.setItem("canteenOrders", JSON.stringify(updated));
+
+    setCart([]);
+
+    // simulate preparation
+    setTimeout(() => {
+      setOrders(prev =>
+        prev.map(o =>
+          o.id === newOrder.id
+            ? { ...o, status: "READY", qr: `QR-${o.id}` }
+            : o
+        )
+      );
+    }, 5000);
+  }}
+>
+  Proceed to Payment
+</button>
+
           </div>
         )}
 
@@ -131,27 +161,44 @@ export default function Canteen() {
         <div className="card" style={{ marginTop: 30 }}>
           <h3>Booking History</h3>
 
-          {recentOrders.map((o) => (
-            <div key={o.id} className="history-item">
-              <div>
-                Order #{o.id}
-                <div className={`status ${o.status.toLowerCase()}`}>
-                  {o.status}
-                </div>
-              </div>
-              <span>{o.date}</span>
-            </div>
-          ))}
+          {orders.slice(0, 3).map(o => (
+  <div key={o.id} className="history-item">
+    <div>
+      Order #{o.id}
+      <div className={`status ${o.status.toLowerCase()}`}>
+        {o.status}
+      </div>
+    </div>
+    <span>
+      {new Date(o.createdAt).toLocaleDateString()}
+    </span>
+  </div>
+))}
+
+<button
+  className="btn btn-outline"
+  style={{ marginTop: 10 }}
+  onClick={() => window.location.href = "/my-bookings"}
+>
+  View Full History →
+</button>
+
+
 
           {/* QR Preview */}
-          <div className="qr-box">
-            <strong>Scan QR to Collect</strong>
-            <div className="qr-placeholder">
-              QR CODE
-            </div>
-          </div>
+          {orders.find(o => o.status === "READY") && (
+  <div className="qr-box">
+    <strong>Scan QR to Collect</strong>
+    <div className="qr-placeholder">
+      {orders.find(o => o.status === "READY").qr}
+    </div>
+  </div>
+)}
+
         </div>
       </main>
     </div>
+
+
   );
 }

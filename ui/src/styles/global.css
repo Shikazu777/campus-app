@@ -1,0 +1,171 @@
+/* RESET ONLY */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  background: #f6f7fb;
+  color: #111827;
+}
+
+
+
+/* Buttons – ONLY COLORS, NO SIZE */
+button {
+  cursor: pointer;
+  border-radius: 8px;
+  border: none;
+}
+
+button.primary {
+  background: #2563eb;
+  color: white;
+}
+
+button.success {
+  background: #22c55e;
+  color: white;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.page-title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.tab {
+  padding: 6px 14px;
+  background: #e5e7eb;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.tab.active {
+  background: #2563eb;
+  color: white;
+}
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 20px;
+}
+
+.item-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+
+/* Card – NO WIDTH CONTROL */
+.card {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+}
+
+/* Food images must NEVER control layout */
+.food-image {
+  width: 100%;
+  height: 140px;
+  object-fit: cover;
+  border-radius: 12px;
+}
+
+/* ===== APP LAYOUT ===== */
+
+.app {
+  display: flex;
+  min-height: 100vh;
+}
+
+.main {
+  flex: 1;
+  padding: 24px;
+}
+
+.btn {
+  padding: 8px 14px;
+  font-size: 14px;
+  border-radius: 8px;
+}
+
+.btn-success {
+  background: #22c55e;
+  color: white;
+}
+
+.btn-outline {
+  background: transparent;
+  border: 1px solid #d1d5db;
+}
+
+.btn-cta {
+  background: #f97316;
+  color: white;
+  padding: 12px 16px;
+  font-size: 15px;
+  border-radius: 10px;
+}
+
+
+/* limit content width like a real dashboard */
+.main > * {
+  max-width: 1100px;
+}
+
+.history-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid #e5e7eb;
+  font-size: 14px;
+}
+
+.status {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.status.ready { color: #22c55e; }
+.status.collected { color: #2563eb; }
+.status.no-show { color: #ef4444; }
+
+.qr-box {
+  margin-top: 20px;
+  text-align: center;
+}
+
+.qr-placeholder {
+  height: 120px;
+  background: repeating-linear-gradient(
+    45deg,
+    #e5e7eb,
+    #e5e7eb 10px,
+    #f9fafb 10px,
+    #f9fafb 20px
+  );
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 10px;
+  border-radius: 10px;
+  color: #6b7280;
+}
