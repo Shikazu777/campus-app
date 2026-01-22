@@ -1,94 +1,73 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useCart } from "../context/CartContext";
 import "../styles/global.css";
 
-/* -------- FAKE CANTEEN DATA (₹) -------- */
-const FOOD_DATA = {
-  Meals: [
-    {
-      id: 1,
-      name: "Veg Meals",
-      price: 80,
-      img: "https://images.unsplash.com/photo-1604908176997-125f25cc6f3d"
-    },
-    {
-      id: 2,
-      name: "Chicken Meals",
-      price: 120,
-      img: "https://images.unsplash.com/photo-1625944230945-1b7dd3b949ab"
-    }
-  ],
-  Snacks: [
-    {
-      id: 3,
-      name: "Samosa",
-      price: 15,
-      img: "https://images.unsplash.com/photo-1600628422019-6c5a8a77a1f3"
-    },
-    {
-      id: 4,
-      name: "Bajji",
-      price: 20,
-      img: "https://images.unsplash.com/photo-1606491956689-2ea866880c84"
-    }
-  ],
-  Drinks: [
-    {
-      id: 5,
-      name: "Tea",
-      price: 12,
-      img: "https://images.unsplash.com/photo-1544787219-7f47ccb76574"
-    },
-    {
-      id: 6,
-      name: "Coffee",
-      price: 15,
-      img: "https://images.unsplash.com/photo-1509042239860-f550ce710b93"
-    }
-  ]
-};
-
 export default function Canteen() {
+  const navigate = useNavigate();
+  const { cart, addToCart, total } = useCart();
+
+  const [items, setItems] = useState([]);
   const [category, setCategory] = useState("Meals");
-  const [cart, setCart] = useState([]);
-  const [orders, setOrders] = useState(() => {
-  const saved = localStorage.getItem("canteenOrders");
-  return saved ? JSON.parse(saved) : [];
-});
+  const [orders, setOrders] = useState([]);
 
+  const studentId = 1; // TEMP until login system
 
-  const addToCart = (item) => {
-    const exists = cart.find((i) => i.id === item.id);
-    if (exists) {
-      setCart(
-        cart.map((i) =>
-          i.id === item.id ? { ...i, qty: i.qty + 1 } : i
-        )
-      );
-    } else {
-      setCart([...cart, { ...item, qty: 1 }]);
-    }
+  /* ---------------- FETCH MENU ---------------- */
+
+  useEffect(() => {
+    fetch(`http://localhost:8000/canteen/items?category=${category}`)
+      .then(res => res.json())
+      .then(setItems);
+  }, [category]);
+
+  /* ---------------- FETCH ORDER HISTORY ---------------- */
+
+  useEffect(() => {
+    fetch(`http://localhost:8000/canteen/orders/student/${studentId}`)
+      .then(res => res.json())
+      .then(setOrders);
+  }, []);
+
+  /* ---------------- PAYMENT FLOW ---------------- */
+
+  const makePayment = async () => {
+    // 1. Create order
+    const res = await fetch("http://localhost:8000/canteen/order", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        student_id: studentId,
+        total_amount: total
+      })
+    });
+
+    const data = await res.json();
+    const orderId = data.order_id;
+
+    // 2. Simulate payment delay (7 sec)
+    setTimeout(async () => {
+      await fetch("http://localhost:8000/payment/success", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ order_id: orderId })
+      });
+
+      navigate(`/canteen/order/${orderId}`);
+    }, 7000);
   };
-
-  const total = cart.reduce(
-    (sum, i) => sum + i.price * i.qty,
-    0
-  );
 
   return (
     <div className="app">
-
-
-      {/* ---------- MAIN ---------- */}
       <main className="main">
         {/* HEADER */}
         <div className="page-header">
           <h1 className="page-title">Canteen Menu</h1>
-          <button className="btn btn-outline">👤 Profile</button>
         </div>
 
-        {/* TABS */}
+        {/* CATEGORY TABS */}
         <div className="tabs">
-          {Object.keys(FOOD_DATA).map((cat) => (
+          {["Meals", "Snacks", "Drinks"].map(cat => (
             <div
               key={cat}
               className={`tab ${category === cat ? "active" : ""}`}
@@ -99,19 +78,26 @@ export default function Canteen() {
           ))}
         </div>
 
-        {/* FOOD GRID */}
+        {/* FOOD ITEMS */}
         <div className="card-grid">
-          {FOOD_DATA[category].map((item) => (
+          {items.map(item => (
             <div key={item.id} className="card item-card">
-              <img src={item.img} alt={item.name} className="food-image" />
+              <img src={item.image_url} className="food-image" />
               <div className="item-title">{item.name}</div>
               <div className="item-price">₹ {item.price}</div>
-              <button
-                className="btn btn-success"
-                onClick={() => addToCart(item)}
-              >
-                Add to Cart
-              </button>
+
+              {item.is_available && item.stock > 0 ? (
+                <button
+                  className="btn btn-success"
+                  onClick={() => addToCart(item)}
+                >
+                  Add to Cart
+                </button>
+              ) : (
+                <button disabled className="btn">
+                  Out of Stock
+                </button>
+              )}
             </div>
           ))}
         </div>
@@ -119,86 +105,44 @@ export default function Canteen() {
         {/* CART SUMMARY */}
         {cart.length > 0 && (
           <div className="card" style={{ marginTop: 24 }}>
-            <h3>Your order will be ready in 30 minutes</h3>
-            <p>Total: ₹ {total}</p>
-            <button
-  className="btn-cta"
-  onClick={() => {
-    const newOrder = {
-      id: Date.now(),
-      items: cart,
-      total,
-      status: "PREPARING",
-      qr: null,
-      createdAt: new Date().toISOString()
-    };
+            <h3>Total: ₹ {total}</h3>
+            <p>Payment will be confirmed in a few seconds</p>
 
-    const updated = [newOrder, ...orders];
-    setOrders(updated);
-    localStorage.setItem("canteenOrders", JSON.stringify(updated));
-
-    setCart([]);
-
-    // simulate preparation
-    setTimeout(() => {
-      setOrders(prev =>
-        prev.map(o =>
-          o.id === newOrder.id
-            ? { ...o, status: "READY", qr: `QR-${o.id}` }
-            : o
-        )
-      );
-    }, 5000);
-  }}
->
-  Proceed to Payment
-</button>
-
+            <button className="btn-cta" onClick={makePayment}>
+              Make Payment
+            </button>
           </div>
         )}
 
-        {/* BOOKING HISTORY */}
+        {/* RECENT ORDERS */}
         <div className="card" style={{ marginTop: 30 }}>
-          <h3>Booking History</h3>
+          <h3>Recent Orders</h3>
+
+          {orders.length === 0 && <p>No orders yet</p>}
 
           {orders.slice(0, 3).map(o => (
-  <div key={o.id} className="history-item">
-    <div>
-      Order #{o.id}
-      <div className={`status ${o.status.toLowerCase()}`}>
-        {o.status}
-      </div>
-    </div>
-    <span>
-      {new Date(o.createdAt).toLocaleDateString()}
-    </span>
-  </div>
-))}
+            <div key={o.id} className="history-item">
+              <div>
+                Order #{o.id}
+                <div className={`status ${o.status.toLowerCase()}`}>
+                  {o.status}
+                </div>
+              </div>
+              <span>
+                {new Date(o.created_at).toLocaleDateString()}
+              </span>
+            </div>
+          ))}
 
-<button
-  className="btn btn-outline"
-  style={{ marginTop: 10 }}
-  onClick={() => window.location.href = "/my-bookings"}
->
-  View Full History →
-</button>
-
-
-
-          {/* QR Preview */}
-          {orders.find(o => o.status === "READY") && (
-  <div className="qr-box">
-    <strong>Scan QR to Collect</strong>
-    <div className="qr-placeholder">
-      {orders.find(o => o.status === "READY").qr}
-    </div>
-  </div>
-)}
-
+          <button
+            className="btn btn-outline"
+            style={{ marginTop: 10 }}
+            onClick={() => navigate("/canteen/history")}
+          >
+            View Full History →
+          </button>
         </div>
       </main>
     </div>
-
-
   );
 }

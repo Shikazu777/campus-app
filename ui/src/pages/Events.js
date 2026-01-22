@@ -1,34 +1,9 @@
 import { useState } from "react";
 
-/* -------- FAKE EVENT DATA -------- */
-const EVENTS = [
-  {
-    id: 1,
-    title: "Tech Symposium 2026",
-    description: "Talks, workshops, and networking.",
-    fee: 150,
-    date: "2026-02-10"
-  },
-  {
-    id: 2,
-    title: "Cultural Fest",
-    description: "Music, dance, and fun events.",
-    fee: 0,
-    date: "2026-02-15"
-  },
-  {
-    id: 3,
-    title: "AI & Data Analytics Seminar",
-    description: "Industry experts on AI trends.",
-    fee: 100,
-    date: "2026-02-20"
-  }
-];
 
 export default function Events() {
   const [selectedEvent, setSelectedEvent] = useState(null);
-  const [bookedEvent, setBookedEvent] = useState(null);
-
+  
   // TEMP: simulate logged-in user
   const userType = "student"; // student / faculty
 
@@ -93,11 +68,8 @@ export default function Events() {
         </div>
       )}
 
-      {/* ACTIVE TICKET QR */}
-      {bookedEvent && (
-        <EventQR event={bookedEvent} />
-      )}
-
+     
+     
       {/* EVENT HISTORY */}
       <div style={{ marginTop: "50px" }}>
         <h2>📜 Event Booking History</h2>

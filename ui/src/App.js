@@ -13,10 +13,12 @@ import CanteenHistory from "./pages/CanteenHistory";
 
 
 export default function App() {
+  const currentUser = null;
+
 
   // TEMP: simulate logged-in user
-  const currentUser = {
-    role: "OWNER" // change to STUDENT / EVENT_EDITOR / CANTEEN_EDITOR
+  // const currentUser = {
+  //   role: "OWNER" // change to STUDENT / EVENT_EDITOR / CANTEEN_EDITOR
   };
 
   return (
@@ -49,4 +51,4 @@ export default function App() {
     </OrderProvider>
    </CartProvider>
   );
-}
+

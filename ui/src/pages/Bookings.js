@@ -7,48 +7,15 @@ export default function Bookings() {
       <section style={sectionStyle}>
         <h2>🍔 Canteen Orders</h2>
 
-        <BookingItem
-          title="Veg Meals"
-          amount="₹80"
-          status="Collected"
-          date="15 Jan 2026"
-        />
-        <BookingItem
-          title="Samosa"
-          amount="₹15"
-          status="Collected"
-          date="14 Jan 2026"
-        />
-        <BookingItem
-          title="Coffee"
-          amount="₹15"
-          status="Collected"
-          date="13 Jan 2026"
-        />
-        <BookingItem
-          title="Chicken Meals"
-          amount="₹120"
-          status="Cancelled"
-          date="10 Jan 2026"
-        />
+        
+      
       </section>
 
       {/* EVENT BOOKINGS */}
       <section style={sectionStyle}>
         <h2>🎟 Event Bookings</h2>
 
-        <BookingItem
-          title="Tech Symposium"
-          amount="₹150"
-          status="Attended"
-          date="12 Jan 2026"
-        />
-        <BookingItem
-          title="Cultural Fest"
-          amount="Free"
-          status="Attended"
-          date="08 Jan 2026"
-        />
+        
       </section>
     </div>
   );
