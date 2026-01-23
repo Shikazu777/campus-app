@@ -14,7 +14,8 @@ import EventDetails from "./pages/EventDetails";
 import EventTicket from "./pages/EventTicket";
 import AdminEventScanner from "./pages/AdminEventScanner";
 import AdminEventCreate from "./pages/AdminEventCreate";
-
+import AdminEventList from "./pages/AdminEventList";
+import AdminEventEdit from "./pages/AdminEventEdit";
 
 
 export default function App() {
@@ -54,6 +55,8 @@ export default function App() {
                 <Route path="/admin/canteen" element={<AdminCanteen />} />
                 <Route path="/admin/event/scanner" element={<AdminEventScanner />} />
                 <Route path="/admin/event/create" element={<AdminEventCreate />} />
+                <Route path="/admin/event/list" element={<AdminEventList />} />
+                <Route path="/admin/event/edit/:id" element={<AdminEventEdit />} />
               </Routes>
             </div>
           </div>

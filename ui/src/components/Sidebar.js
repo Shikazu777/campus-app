@@ -27,6 +27,7 @@ export default function Sidebar({ role }) {
     <>
       <div style={section}>Event Admin</div>
       <Link to="/admin/events/create" style={linkStyle}>➕ Create Event</Link>
+      <Link to="/admin/events/list" style={linkStyle}>📋 Manage Events</Link>
       <Link to="/admin/events/scan" style={linkStyle}>🎫 Scan Tickets</Link>
     </>
   )}

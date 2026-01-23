@@ -402,6 +402,20 @@ def mark_order_ready(order_id: int, db: Session = Depends(get_db)):
     }
 
 
+@app.get("/admin/events")
+def list_all_events(db: Session = Depends(get_db)):
+    events = db.query(Event).order_by(Event.event_time.desc()).all()
+
+    return [
+        {
+            "id": e.id,
+            "name": e.name,
+            "event_time": e.event_time,
+            "registration_deadline": e.registration_deadline,
+            "is_active": e.is_active
+        }
+        for e in events
+    ]
 
 
 @app.post("/event/create")
@@ -620,6 +634,48 @@ def cancel_event(registration_id: int, db: Session = Depends(get_db)):
         "refund_amount": refund_amount,
         "refund_percent": refund_percent * 100
     }
+
+class EventUpdate(BaseModel):
+    name: str
+    description: str
+    department: str
+    eligibility: str
+    event_time: datetime
+    registration_deadline: datetime
+
+@app.put("/admin/events/{event_id}")
+def update_event(
+    event_id: int,
+    payload: EventUpdate,
+    db: Session = Depends(get_db)
+):
+    event = db.query(Event).filter(Event.id == event_id).first()
+
+    if not event:
+        return {"error": "Event not found"}
+
+    event.name = payload.name
+    event.description = payload.description
+    event.department = payload.department
+    event.eligibility = payload.eligibility
+    event.event_time = payload.event_time
+    event.registration_deadline = payload.registration_deadline
+
+    db.commit()
+
+    return {"message": "Event updated"}
+
+@app.post("/admin/events/{event_id}/close")
+def close_event(event_id: int, db: Session = Depends(get_db)):
+    event = db.query(Event).filter(Event.id == event_id).first()
+
+    if not event:
+        return {"error": "Event not found"}
+
+    event.is_active = False
+    db.commit()
+
+    return {"message": "Event closed"}
 
 
 # ---- utilities ----
