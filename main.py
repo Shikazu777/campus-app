@@ -480,23 +480,59 @@ def get_event(event_id: int, db: Session = Depends(get_db)):
 def register_event(student_id: int, event_id: int, db: Session = Depends(get_db)):
     event = db.query(Event).filter(Event.id == event_id).first()
 
+    if not event:
+        return {"error": "Event not found"}
+
     if datetime.utcnow() > event.registration_deadline:
         return {"error": "Registration closed"}
 
     reg = EventRegistration(
-    student_id=student_id,
-    event_id=event_id,
-    status="PENDING",
-    qr_token=None
-)
-
+        student_id=student_id,
+        event_id=event_id,
+        status="PENDING",
+        qr_token=None
+    )
 
     db.add(reg)
     db.commit()
+    db.refresh(reg)
 
     return {
-        "message": "Registered for event",
         "registration_id": reg.id,
+        "status": reg.status
+    }
+
+@app.post("/event/confirm")
+def confirm_event_registration(registration_id: int, db: Session = Depends(get_db)):
+    reg = db.query(EventRegistration).filter(
+        EventRegistration.id == registration_id
+    ).first()
+
+    if not reg:
+        return {"error": "Registration not found"}
+
+    reg.status = "CONFIRMED"
+    reg.qr_token = generate_qr_token("EVENT")
+
+    db.commit()
+
+    return {
+        "message": "Registration confirmed",
+        "qr_token": reg.qr_token
+    }
+
+@app.get("/event/registration/{registration_id}")
+def get_event_registration(registration_id: int, db: Session = Depends(get_db)):
+    reg = db.query(EventRegistration).filter(
+        EventRegistration.id == registration_id
+    ).first()
+
+    if not reg:
+        return {"error": "Not found"}
+
+    return {
+        "id": reg.id,
+        "status": reg.status,
         "qr_token": reg.qr_token
     }
 

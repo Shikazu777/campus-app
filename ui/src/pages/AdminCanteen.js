@@ -145,7 +145,7 @@ export default function AdminCanteen() {
         </h2>
 
         {items.map(i => (
-          <div key={o.id} style={card} onClick={() => viewOrderItems(o.id)}>
+          <div key={i.id} style={card}>
 
             <div>
               <b>{i.name}</b>

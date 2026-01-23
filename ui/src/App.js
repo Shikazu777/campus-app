@@ -10,6 +10,8 @@ import CanteenHistory from "./pages/CanteenHistory";
 import AdminCanteen from "./pages/AdminCanteen";
 import { CartProvider } from "./context/CartContext";
 import { OrderProvider } from "./context/OrderContext";
+import EventDetails from "./pages/EventDetails";
+import EventTicket from "./pages/EventTicket";
 
 export default function App() {
   // TEMP until login system
@@ -38,7 +40,9 @@ export default function App() {
                 <Route path="/canteen/cart" element={<Cart />} />
                 <Route path="/canteen/order/:id" element={<OrderDetails />} />
                 <Route path="/canteen/history" element={<CanteenHistory />} />
+                <Route path="/events/:id" element={<EventDetails />} />
                 <Route path="/events" element={<Events />} />
+                <Route path="/events/ticket/:id" element={<EventTicket />} />
                 <Route path="/bookings" element={<Bookings />} />
                 <Route path="/payment/mock/:orderId" element={<MockPayment />} />
 
