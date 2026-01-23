@@ -4,28 +4,35 @@ import { useEffect, useState } from "react";
 export default function OrderDetails() {
   const { id } = useParams();
   const [order, setOrder] = useState(null);
+  const [items, setItems] = useState([]);
 
-  useEffect(() => {
+  /* ---------------- FETCH ORDER ---------------- */
+
   const fetchOrder = () => {
     fetch(`http://localhost:8000/canteen/order/${id}`)
       .then(res => res.json())
       .then(data => {
-        if (!data.error) {
-          setOrder(data);
-        }
+        if (!data.error) setOrder(data);
       });
   };
 
-  fetchOrder(); // initial load
-  const interval = setInterval(fetchOrder, 5000); // poll every 5s
+  /* ---------------- FETCH ITEMS ---------------- */
 
-  return () => clearInterval(interval);
-}, [id]);
+  const fetchItems = () => {
+    fetch(`http://localhost:8000/canteen/order/${id}/items`)
+      .then(res => res.json())
+      .then(setItems);
+  };
 
+  useEffect(() => {
+    fetchOrder();
+    fetchItems();
 
-  if (!order) {
-    return <p>❌ Order not found</p>;
-  }
+    const interval = setInterval(fetchOrder, 5000);
+    return () => clearInterval(interval);
+  }, [id]);
+
+  if (!order) return <p>❌ Order not found</p>;
 
   return (
     <div>
@@ -34,13 +41,16 @@ export default function OrderDetails() {
       <p>Status: <b>{order.status}</b></p>
       <p>Total: ₹{order.total}</p>
 
-      {order.status === "PENDING" && (
-        <p>Waiting for payment confirmation.</p>
-      )}
+      <h3 style={{ marginTop: 20 }}>Items</h3>
 
-      {order.status === "PREPARING" && (
-        <p>Your order is being prepared.</p>
-      )}
+      {items.length === 0 && <p>No items</p>}
+
+      {items.map((i, idx) => (
+        <div key={idx} style={itemRow}>
+          <span>{i.name}</span>
+          <span>{i.quantity} × ₹{i.price}</span>
+        </div>
+      ))}
 
       {order.status === "READY" && (
         <div style={qrBox}>
@@ -55,6 +65,16 @@ export default function OrderDetails() {
     </div>
   );
 }
+
+/* ---------------- STYLES ---------------- */
+
+const itemRow = {
+  display: "flex",
+  justifyContent: "space-between",
+  padding: "8px 0",
+  borderBottom: "1px solid #e5e7eb",
+  fontSize: 14
+};
 
 const qrBox = {
   marginTop: 20,

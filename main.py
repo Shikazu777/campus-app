@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException, Depends
 from sqlalchemy.orm import Session
 from database import SessionLocal
-from models import Student, Transaction, CanteenOrder, CanteenOrderItem
+from models import Student, Transaction, CanteenOrder, CanteenOrderItem, CanteenItem
 from models import Event, EventRegistration
 from scoring import update_trust_score
 from datetime import datetime, timedelta
@@ -264,6 +264,30 @@ def get_canteen_order(order_id: int, db: Session = Depends(get_db)):
         "status": order.status,
         "qr_token": order.qr_token
     }
+
+
+@app.get("/canteen/order/{order_id}/items")
+def get_order_items(order_id: int, db: Session = Depends(get_db)):
+    items = (
+        db.query(
+            CanteenOrderItem.quantity,
+            CanteenOrderItem.price_at_order,
+            CanteenItem.name
+        )
+        .join(CanteenItem, CanteenItem.id == CanteenOrderItem.item_id)
+        .filter(CanteenOrderItem.order_id == order_id)
+        .all()
+    )
+
+    return [
+        {
+            "name": name,
+            "quantity": qty,
+            "price": price
+        }
+        for qty, price, name in items
+    ]
+
 
 @app.get("/canteen/orders/student/{student_id}")
 def get_student_orders(student_id: int, db: Session = Depends(get_db)):

@@ -4,6 +4,9 @@ export default function AdminCanteen() {
   const [orders, setOrders] = useState([]);
   const [items, setItems] = useState([]);
   const [showAdd, setShowAdd] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [orderItems, setOrderItems] = useState([]);
+
 
   /* ---------------- FETCH DATA ---------------- */
 
@@ -12,6 +15,16 @@ export default function AdminCanteen() {
       .then(res => res.json())
       .then(setOrders);
   };
+
+  const viewOrderItems = async (orderId) => {
+  const res = await fetch(
+    `http://localhost:8000/canteen/order/${orderId}/items`
+  );
+  const data = await res.json();
+  setOrderItems(data);
+  setSelectedOrder(orderId);
+};
+
 
   const loadItems = () => {
     fetch("http://localhost:8000/canteen/items")
@@ -81,7 +94,7 @@ export default function AdminCanteen() {
         <h2>📦 Live Orders</h2>
 
         {orders.map(o => (
-          <div key={o.id} style={card}>
+          <div key={o.id} style={card} onClick={() => viewOrderItems(o.id)}>
             <div>
               <b>Order #{o.id}</b>
               <p>Status: {o.status}</p>
@@ -105,6 +118,20 @@ export default function AdminCanteen() {
         ))}
       </section>
 
+      {selectedOrder && (
+  <div style={{ marginTop: 30 }}>
+    <h3>Items in Order #{selectedOrder}</h3>
+
+    {orderItems.map((i, idx) => (
+      <div key={idx} style={itemRow}>
+        <span>{i.name}</span>
+        <span>{i.quantity} × ₹{i.price}</span>
+      </div>
+    ))}
+  </div>
+)}
+
+
       {/* ---------- ITEMS ---------- */}
       <section style={{ marginTop: 40 }}>
         <h2>
@@ -118,7 +145,8 @@ export default function AdminCanteen() {
         </h2>
 
         {items.map(i => (
-          <div key={i.id} style={card}>
+          <div key={o.id} style={card} onClick={() => viewOrderItems(o.id)}>
+
             <div>
               <b>{i.name}</b>
               <p>₹ {i.price}</p>
@@ -190,6 +218,15 @@ function AddItem({ onClose }) {
 }
 
 /* ---------------- STYLES ---------------- */
+
+const itemRow = {
+  display: "flex",
+  justifyContent: "space-between",
+  padding: "6px 0",
+  borderBottom: "1px solid #e5e7eb",
+  fontSize: 14
+};
+
 
 const card = {
   display: "flex",
