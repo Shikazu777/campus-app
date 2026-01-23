@@ -12,6 +12,8 @@ import { CartProvider } from "./context/CartContext";
 import { OrderProvider } from "./context/OrderContext";
 import EventDetails from "./pages/EventDetails";
 import EventTicket from "./pages/EventTicket";
+import AdminEventScanner from "./pages/AdminEventScanner";
+
 
 export default function App() {
   // TEMP until login system
@@ -48,6 +50,7 @@ export default function App() {
 
                 {/* ADMIN */}
                 <Route path="/admin/canteen" element={<AdminCanteen />} />
+                <Route path="/admin/event/scanner" element={<AdminEventScanner />} />
               </Routes>
             </div>
           </div>

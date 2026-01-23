@@ -174,7 +174,7 @@ class CanteenOrderCreate(BaseModel):
     items: list[OrderItemPayload]
 
 @app.get("/canteen/orders")
-def get_all_orders(db: Session = Depends(get_db)):
+def get_all_canteen_orders(db: Session = Depends(get_db)):
     orders = (
         db.query(CanteenOrder)
         .order_by(CanteenOrder.created_at.desc())
@@ -184,14 +184,13 @@ def get_all_orders(db: Session = Depends(get_db)):
     return [
         {
             "id": o.id,
+            "student_id": o.student_id,
             "total": o.total_amount,
             "status": o.status,
-            "qr_token": o.qr_token,
             "created_at": o.created_at
         }
         for o in orders
     ]
-
 
 
 @app.post("/canteen/order")
@@ -543,13 +542,20 @@ def scan_event_qr(qr_token: str, db: Session = Depends(get_db)):
         EventRegistration.qr_token == qr_token
     ).first()
 
-    if not reg or reg.status != "CONFIRMED":
-         return {"error": "Invalid or inactive ticket"}
+    if not reg:
+        return {"error": "Invalid QR"}
 
-    reg.status = "attended"
+    if reg.status != "CONFIRMED":
+        return {"error": f"Ticket already {reg.status}"}
+
+    reg.status = "ATTENDED"
     db.commit()
-    return {"message": "Entry allowed"}
 
+    return {
+        "message": "Entry allowed",
+        "student_id": reg.student_id,
+        "event_id": reg.event_id
+    }
 
 @app.post("/event/attend")
 def attend_event(registration_id: int, db: Session = Depends(get_db)):
