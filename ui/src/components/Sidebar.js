@@ -31,6 +31,14 @@ export default function Sidebar({ role }) {
       <Link to="/admin/events/scan" style={linkStyle}>🎫 Scan Tickets</Link>
     </>
   )}
+
+  {role === "OWNER" && (
+  <>
+    <div style={section}>Owner</div>
+    <Link to="/admin/roles" style={linkStyle}>👑 Assign Roles</Link>
+  </>
+)}
+
 </nav>
 
     </div>

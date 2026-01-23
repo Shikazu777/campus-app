@@ -25,6 +25,67 @@ def get_db():
     finally:
         db.close()
 
+class LoginPayload(BaseModel):
+    email: str
+
+@app.post("/login")
+def login(payload: LoginPayload, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.email == payload.email).first()
+
+    if not user:
+        return {"error": "User not found"}
+
+    return {
+        "id": user.id,
+        "email": user.email,
+        "user_type": user.user_type,  # "owner" | "student"
+        "roles": user.roles
+    }
+
+class RoleAssignPayload(BaseModel):
+    user_id: int
+    role: str  # "CANTEEN_EDITOR" | "EVENT_EDITOR"
+
+@app.post("/admin/assign-role")
+def assign_role(
+    payload: RoleAssignPayload,
+    current_user_id: int,
+    db: Session = Depends(get_db)
+):
+    owner = db.query(User).filter(User.id == current_user_id).first()
+
+    if not owner or owner.user_type != "owner":
+        return {"error": "Only OWNER can assign roles"}
+
+    user = db.query(User).filter(User.id == payload.user_id).first()
+    if not user:
+        return {"error": "User not found"}
+
+    # prevent duplicate role
+    if has_role(user, payload.role):
+        return {"message": "User already has this role"}
+
+    user.roles.append(payload.role)  # or however roles are stored
+    db.commit()
+
+    return {
+        "message": f"Role {payload.role} assigned to user {user.email}"
+    }
+
+@app.get("/admin/users")
+def list_users(db: Session = Depends(get_db)):
+    users = db.query(User).all()
+
+    return [
+        {
+            "id": u.id,
+            "email": u.email,
+            "user_type": u.user_type,
+            "roles": u.roles
+        }
+        for u in users
+    ]
+
 
 @app.post("/register")
 def register_student(email: str, db: Session = Depends(get_db)):
@@ -32,6 +93,8 @@ def register_student(email: str, db: Session = Depends(get_db)):
     db.add(student)
     db.commit()
     return {"message": "Student registered"}
+
+
 
 @app.get("/ui/students")
 def get_students(db: Session = Depends(get_db)):
