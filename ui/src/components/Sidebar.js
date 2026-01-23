@@ -12,21 +12,37 @@ export default function Sidebar({ role }) {
       <h2>Campus App</h2>
 
       <nav style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-        <Link to="/canteen" style={linkStyle}>🍔 Canteen</Link>
-        <Link to="/events" style={linkStyle}>🎟 Events</Link>
-        <Link to="/bookings" style={linkStyle}>📦 My Bookings</Link>
+  <Link to="/canteen" style={linkStyle}>🍔 Canteen</Link>
+  <Link to="/events" style={linkStyle}>🎟 Events</Link>
+  <Link to="/bookings" style={linkStyle}>📦 My Bookings</Link>
 
-        {(role === "OWNER" || role === "CANTEEN_EDITOR") &&
-          <Link to="/admin/canteen" style={linkStyle}>🛠 Canteen Admin</Link>
-        }
+  {(role === "OWNER" || role === "CANTEEN_EDITOR") && (
+    <>
+      <div style={section}>Canteen Admin</div>
+      <Link to="/admin/canteen" style={linkStyle}>🛠 Manage Orders</Link>
+    </>
+  )}
 
-        {(role === "OWNER" || role === "EVENT_EDITOR") &&
-          <Link to="/admin/events" style={linkStyle}>🛠 Event Admin</Link>
-        }
-      </nav>
+  {(role === "OWNER" || role === "EVENT_EDITOR") && (
+    <>
+      <div style={section}>Event Admin</div>
+      <Link to="/admin/events/create" style={linkStyle}>➕ Create Event</Link>
+      <Link to="/admin/events/scan" style={linkStyle}>🎫 Scan Tickets</Link>
+    </>
+  )}
+</nav>
+
     </div>
   );
 }
+
+const section = {
+  marginTop: "14px",
+  fontSize: "13px",
+  color: "#9ca3af",
+  textTransform: "uppercase"
+};
+
 
 const linkStyle = {
   color: "white",

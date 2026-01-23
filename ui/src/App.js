@@ -13,6 +13,8 @@ import { OrderProvider } from "./context/OrderContext";
 import EventDetails from "./pages/EventDetails";
 import EventTicket from "./pages/EventTicket";
 import AdminEventScanner from "./pages/AdminEventScanner";
+import AdminEventCreate from "./pages/AdminEventCreate";
+
 
 
 export default function App() {
@@ -51,6 +53,7 @@ export default function App() {
                 {/* ADMIN */}
                 <Route path="/admin/canteen" element={<AdminCanteen />} />
                 <Route path="/admin/event/scanner" element={<AdminEventScanner />} />
+                <Route path="/admin/event/create" element={<AdminEventCreate />} />
               </Routes>
             </div>
           </div>
