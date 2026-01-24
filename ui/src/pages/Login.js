@@ -1,40 +1,49 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 export default function Login() {
-  const [email, setEmail] = useState("");
+  const [value, setValue] = useState("");
   const [error, setError] = useState(null);
   const { login } = useAuth();
-  const navigate = useNavigate();
 
-  const submit = async () => {
+  const submit = () => {
+    const v = value.trim().toUpperCase();
     setError(null);
 
-    const res = await fetch("http://localhost:8000/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email })
-    });
-
-    const data = await res.json();
-
-    if (data.error) {
-      setError(data.error);
+    if (v === "ADMIN") {
+      login({
+        user_type: "owner",
+        roles: ["EVENT_EDITOR", "CANTEEN_EDITOR"]
+      });
+    } else if (v === "STUDENT") {
+      login({
+        user_type: "student",
+        roles: []
+      });
+    } else if (v === "CANTEENEDITOR") {
+      login({
+        user_type: "student",
+        roles: ["CANTEEN_EDITOR"]
+      });
+    } else if (v === "EVENTEDITOR") {
+      login({
+        user_type: "student",
+        roles: ["EVENT_EDITOR"]
+      });
     } else {
-      login(data);
-      navigate("/events");
+      setError("Enter ADMIN / STUDENT / CANTEENEDITOR / EVENTEDITOR");
+      return;
     }
   };
 
   return (
     <div style={wrap}>
-      <h2>Campus Login</h2>
+      <h2>Campus Login (Demo)</h2>
 
       <input
-        placeholder="College email"
-        value={email}
-        onChange={e => setEmail(e.target.value)}
+        placeholder="ADMIN / STUDENT / CANTEENEDITOR / EVENTEDITOR"
+        value={value}
+        onChange={e => setValue(e.target.value)}
         style={input}
       />
 
@@ -49,17 +58,21 @@ export default function Login() {
 
 const wrap = {
   padding: 40,
-  maxWidth: 320,
-  margin: "auto"
+  maxWidth: 420,
+  margin: "100px auto",
+  textAlign: "center",
+  background: "white",
+  borderRadius: 12
 };
 
 const input = {
   width: "100%",
-  padding: 10,
+  padding: 12,
   marginBottom: 12
 };
 
 const btn = {
-  padding: "10px 20px",
-  width: "100%"
+  width: "100%",
+  padding: 12,
+  cursor: "pointer"
 };
