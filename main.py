@@ -13,6 +13,56 @@ import time
 from threading import Thread
 from pydantic import BaseModel
 from models import CanteenItem
+from sqlalchemy import func
+
+
+@app.get("/analytics/student/{student_id}")
+def student_analytics(student_id: int, db: Session = Depends(get_db)):
+    # total spend by category
+    totals = (
+        db.query(
+            Transaction.category,
+            func.sum(Transaction.amount)
+        )
+        .filter(Transaction.student_id == student_id)
+        .group_by(Transaction.category)
+        .all()
+    )
+
+    # spending over time
+    timeline = (
+        db.query(
+            func.date(Transaction.created_at),
+            func.sum(Transaction.amount)
+        )
+        .filter(Transaction.student_id == student_id)
+        .group_by(func.date(Transaction.created_at))
+        .order_by(func.date(Transaction.created_at))
+        .all()
+    )
+
+    # most ordered food
+    top_food = (
+        db.query(
+            CanteenItem.name,
+            func.sum(CanteenOrderItem.quantity).label("qty")
+        )
+        .join(CanteenOrderItem, CanteenItem.id == CanteenOrderItem.item_id)
+        .join(CanteenOrder, CanteenOrder.id == CanteenOrderItem.order_id)
+        .filter(CanteenOrder.student_id == student_id)
+        .group_by(CanteenItem.name)
+        .order_by(func.sum(CanteenOrderItem.quantity).desc())
+        .first()
+    )
+
+    return {
+        "totals": {c: float(a) for c, a in totals},
+        "timeline": [
+            {"date": str(d), "amount": float(a)}
+            for d, a in timeline
+        ],
+        "top_food": top_food.name if top_food else None
+    }
 
 
 
