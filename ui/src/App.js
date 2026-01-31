@@ -26,6 +26,8 @@ import { OrderProvider } from "./context/OrderContext";
 import { useAuth } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 
+import Analytics from "./pages/Analytics";  
+
 export default function App() {
   const { user } = useAuth();
 
@@ -74,6 +76,8 @@ export default function App() {
 
               <Route path="/bookings" element={<Bookings />} />
               <Route path="/payment/mock/:orderId" element={<MockPayment />} />
+
+              <Route path="/analytics" element={<Analytics />} />
 
               {/* CANTEEN ADMIN */}
               <Route

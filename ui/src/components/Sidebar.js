@@ -24,6 +24,7 @@ export default function Sidebar({ role }) {
           <Link to="/canteen" style={linkStyle}>🍔 Canteen</Link>
           <Link to="/events" style={linkStyle}>🎟 Events</Link>
           <Link to="/bookings" style={linkStyle}>📦 My Bookings</Link>
+          <Link to="/analytics" style={linkStyle}>📊 Analytics</Link>
 
           {(role === "OWNER" || role === "CANTEEN_EDITOR") && (
             <Link to="/admin/canteen" style={linkStyle}>

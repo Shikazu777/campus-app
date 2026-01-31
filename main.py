@@ -15,59 +15,7 @@ from pydantic import BaseModel
 from models import CanteenItem
 from sqlalchemy import func
 
-
-@app.get("/analytics/student/{student_id}")
-def student_analytics(student_id: int, db: Session = Depends(get_db)):
-    # total spend by category
-    totals = (
-        db.query(
-            Transaction.category,
-            func.sum(Transaction.amount)
-        )
-        .filter(Transaction.student_id == student_id)
-        .group_by(Transaction.category)
-        .all()
-    )
-
-    # spending over time
-    timeline = (
-        db.query(
-            func.date(Transaction.created_at),
-            func.sum(Transaction.amount)
-        )
-        .filter(Transaction.student_id == student_id)
-        .group_by(func.date(Transaction.created_at))
-        .order_by(func.date(Transaction.created_at))
-        .all()
-    )
-
-    # most ordered food
-    top_food = (
-        db.query(
-            CanteenItem.name,
-            func.sum(CanteenOrderItem.quantity).label("qty")
-        )
-        .join(CanteenOrderItem, CanteenItem.id == CanteenOrderItem.item_id)
-        .join(CanteenOrder, CanteenOrder.id == CanteenOrderItem.order_id)
-        .filter(CanteenOrder.student_id == student_id)
-        .group_by(CanteenItem.name)
-        .order_by(func.sum(CanteenOrderItem.quantity).desc())
-        .first()
-    )
-
-    return {
-        "totals": {c: float(a) for c, a in totals},
-        "timeline": [
-            {"date": str(d), "amount": float(a)}
-            for d, a in timeline
-        ],
-        "top_food": top_food.name if top_food else None
-    }
-
-
-
 app = FastAPI()
-
 def get_db():
     db = SessionLocal()
     try:
@@ -790,6 +738,149 @@ def close_event(event_id: int, db: Session = Depends(get_db)):
 
     return {"message": "Event closed"}
 
+
+@app.get("/analytics/student/{student_id}")
+def student_analytics(student_id: int, db: Session = Depends(get_db)):
+    # total spend by category
+    totals = (
+        db.query(
+            Transaction.category,
+            func.sum(Transaction.amount)
+        )
+        .filter(Transaction.student_id == student_id)
+        .group_by(Transaction.category)
+        .all()
+    )
+
+    # spending over time
+    timeline = (
+        db.query(
+            func.date(Transaction.created_at),
+            func.sum(Transaction.amount)
+        )
+        .filter(Transaction.student_id == student_id)
+        .group_by(func.date(Transaction.created_at))
+        .order_by(func.date(Transaction.created_at))
+        .all()
+    )
+
+    # most ordered food
+    top_food = (
+        db.query(
+            CanteenItem.name,
+            func.sum(CanteenOrderItem.quantity).label("qty")
+        )
+        .join(CanteenOrderItem, CanteenItem.id == CanteenOrderItem.item_id)
+        .join(CanteenOrder, CanteenOrder.id == CanteenOrderItem.order_id)
+        .filter(CanteenOrder.student_id == student_id)
+        .group_by(CanteenItem.name)
+        .order_by(func.sum(CanteenOrderItem.quantity).desc())
+        .first()
+    )
+
+    return {
+        "totals": {c: float(a) for c, a in totals},
+        "timeline": [
+            {"date": str(d), "amount": float(a)}
+            for d, a in timeline
+        ],
+        "top_food": top_food.name if top_food else None
+    }
+
+
+
+
+
+
+
+
+@app.get("/analytics/admin")
+def admin_analytics(db: Session = Depends(get_db)):
+    students = db.query(Student).all()
+
+    student_stats = []
+
+    for s in students:
+        total = (
+            db.query(func.sum(Transaction.amount))
+            .filter(Transaction.student_id == s.id)
+            .scalar()
+        ) or 0
+
+        student_stats.append({
+            "student_id": s.id,
+            "email": s.email,
+            "total_spent": float(total)
+        })
+
+    top_food = (
+        db.query(
+            CanteenItem.name,
+            func.sum(CanteenOrderItem.quantity)
+        )
+        .join(CanteenOrderItem, CanteenItem.id == CanteenOrderItem.item_id)
+        .group_by(CanteenItem.name)
+        .order_by(func.sum(CanteenOrderItem.quantity).desc())
+        .first()
+    )
+
+    return {
+        "students": student_stats,
+        "most_ordered_food": top_food[0] if top_food else None
+    }
+
+
+@app.get("/analytics/trust/student/{student_id}")
+def student_trust_analytics(student_id: int, db: Session = Depends(get_db)):
+    student = db.query(Student).filter(Student.id == student_id).first()
+    if not student:
+        return {"error": "Student not found"}
+
+    total_orders = db.query(CanteenOrder).filter(
+        CanteenOrder.student_id == student_id
+    ).count()
+
+    collected_orders = db.query(CanteenOrder).filter(
+        CanteenOrder.student_id == student_id,
+        CanteenOrder.status == "COLLECTED"
+    ).count()
+
+    no_shows = db.query(EventRegistration).filter(
+        EventRegistration.student_id == student_id,
+        EventRegistration.status == "no_show"
+    ).count()
+
+    attendance = db.query(EventRegistration).filter(
+        EventRegistration.student_id == student_id,
+        EventRegistration.status == "attended"
+    ).count()
+
+    return {
+        "trust_score": student.trust_score,
+        "trust_tier": student.trust_tier,
+        "orders": {
+            "total": total_orders,
+            "collected": collected_orders
+        },
+        "events": {
+            "attended": attendance,
+            "no_shows": no_shows
+        }
+    }
+
+@app.get("/analytics/trust/admin")
+def admin_trust_overview(db: Session = Depends(get_db)):
+    students = db.query(Student).all()
+
+    return [
+        {
+            "student_id": s.id,
+            "email": s.email,
+            "trust_score": s.trust_score,
+            "trust_tier": s.trust_tier
+        }
+        for s in students
+    ]
 
 # ---- utilities ----
 
