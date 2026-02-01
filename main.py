@@ -14,6 +14,10 @@ from threading import Thread
 from pydantic import BaseModel
 from models import CanteenItem
 from sqlalchemy import func
+import csv
+from fastapi.responses import StreamingResponse
+from io import StringIO
+
 
 app = FastAPI()
 def get_db():
@@ -881,6 +885,86 @@ def admin_trust_overview(db: Session = Depends(get_db)):
         }
         for s in students
     ]
+
+
+@app.get("/analytics/export/student/{student_id}")
+def export_student_analytics(student_id: int, db: Session = Depends(get_db)):
+    rows = (
+        db.query(
+            Transaction.created_at,
+            Transaction.category,
+            Transaction.amount,
+            Transaction.status
+        )
+        .filter(Transaction.student_id == student_id)
+        .order_by(Transaction.created_at)
+        .all()
+    )
+
+    output = StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["date", "category", "amount", "status"])
+
+    for r in rows:
+        writer.writerow([
+            r.created_at,
+            r.category,
+            r.amount,
+            r.status
+        ])
+
+    output.seek(0)
+
+    return StreamingResponse(
+        output,
+        media_type="text/csv",
+        headers={
+            "Content-Disposition": "attachment; filename=student_analytics.csv"
+        }
+    )
+
+
+@app.get("/analytics/export/admin")
+def export_admin_analytics(db: Session = Depends(get_db)):
+    rows = (
+        db.query(
+            Student.email,
+            Transaction.category,
+            Transaction.amount,
+            Transaction.created_at
+        )
+        .join(Transaction, Transaction.student_id == Student.id)
+        .order_by(Transaction.created_at)
+        .all()
+    )
+
+    output = StringIO()
+    writer = csv.writer(output)
+    writer.writerow([
+        "student_email",
+        "category",
+        "amount",
+        "date"
+    ])
+
+    for r in rows:
+        writer.writerow([
+            r.email,
+            r.category,
+            r.amount,
+            r.created_at
+        ])
+
+    output.seek(0)
+
+    return StreamingResponse(
+        output,
+        media_type="text/csv",
+        headers={
+            "Content-Disposition": "attachment; filename=campus_analytics.csv"
+        }
+    )
+
 
 # ---- utilities ----
 
