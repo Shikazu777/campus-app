@@ -928,11 +928,10 @@ def export_student_analytics(student_id: int, db: Session = Depends(get_db)):
 def export_admin_analytics(db: Session = Depends(get_db)):
     rows = (
         db.query(
-            Student.email,
-            Transaction.category,
-            Transaction.amount,
-            Transaction.created_at
-        )
+    Student.email,
+    Transaction.category,
+    Transaction.amount
+)
         .join(Transaction, Transaction.student_id == Student.id)
         .order_by(Transaction.created_at)
         .all()
@@ -941,19 +940,17 @@ def export_admin_analytics(db: Session = Depends(get_db)):
     output = StringIO()
     writer = csv.writer(output)
     writer.writerow([
-        "student_email",
-        "category",
-        "amount",
-        "date"
-    ])
+    "student_email",
+    "category",
+    "amount"
+])
 
     for r in rows:
         writer.writerow([
-            r.email,
-            r.category,
-            r.amount,
-            r.created_at
-        ])
+    r.email,
+    r.category,
+    r.amount
+])
 
     output.seek(0)
 

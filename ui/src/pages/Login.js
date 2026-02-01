@@ -12,21 +12,25 @@ export default function Login() {
 
     if (v === "ADMIN") {
       login({
+        id: 0,
         user_type: "owner",
         roles: ["EVENT_EDITOR", "CANTEEN_EDITOR"]
       });
     } else if (v === "STUDENT") {
       login({
+        id: 1,
         user_type: "student",
         roles: []
       });
     } else if (v === "CANTEENEDITOR") {
       login({
+        id: 1,
         user_type: "student",
         roles: ["CANTEEN_EDITOR"]
       });
     } else if (v === "EVENTEDITOR") {
       login({
+        id: 1,
         user_type: "student",
         roles: ["EVENT_EDITOR"]
       });

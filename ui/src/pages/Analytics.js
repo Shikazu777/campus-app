@@ -54,7 +54,7 @@ export default function Analytics() {
       .then(setTrust);
   }, [isAdmin, user]);
 
-  if (!data) return <p>Loading analytics...</p>;
+  if (!data || !trust) return <p>Loading analytics...</p>;
 
   /* ---------------- STUDENT CHART DATA ---------------- */
 
@@ -69,11 +69,11 @@ export default function Analytics() {
   };
 
   const lineData = {
-    labels: data.timeline.map((t) => t.date),
+    labels: (data.timeline || []).map(t => t.date),
     datasets: [
       {
         label: "Spending",
-        data: data.timeline.map((t) => t.amount),
+        data: (data.timeline || []).map(t => t.amount),
         borderColor: "#2563eb",
         backgroundColor: "#93c5fd",
         tension: 0.3,
@@ -89,7 +89,8 @@ export default function Analytics() {
         datasets: [
           {
             label: "Total Spent",
-            data: data.students.map((s) => s.total_spent),
+            labels: (data.students || []).map(s => s.email),
+            data: (data.students || []).map(s => s.total_spent),
             backgroundColor: "#6366f1",
           },
         ],
@@ -171,7 +172,7 @@ export default function Analytics() {
               </tr>
             </thead>
             <tbody>
-              {trust.map((s) => (
+              {(trust || []).map(s => (
                 <tr key={s.student_id}>
                   <td>{s.email}</td>
                   <td>{s.trust_score}</td>
