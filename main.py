@@ -759,12 +759,12 @@ def student_analytics(student_id: int, db: Session = Depends(get_db)):
     # spending over time
     timeline = (
         db.query(
-            func.date(Transaction.created_at),
+            func.date(Transaction.timestamp),
             func.sum(Transaction.amount)
         )
         .filter(Transaction.student_id == student_id)
-        .group_by(func.date(Transaction.created_at))
-        .order_by(func.date(Transaction.created_at))
+        .group_by(func.date(Transaction.timestamp))
+        .order_by(func.date(Transaction.timestamp))
         .all()
     )
 
@@ -891,13 +891,13 @@ def admin_trust_overview(db: Session = Depends(get_db)):
 def export_student_analytics(student_id: int, db: Session = Depends(get_db)):
     rows = (
         db.query(
-            Transaction.created_at,
+            Transaction.timestamp,
             Transaction.category,
             Transaction.amount,
             Transaction.status
         )
         .filter(Transaction.student_id == student_id)
-        .order_by(Transaction.created_at)
+        .order_by(Transaction.timestamp)
         .all()
     )
 
@@ -907,7 +907,7 @@ def export_student_analytics(student_id: int, db: Session = Depends(get_db)):
 
     for r in rows:
         writer.writerow([
-            r.created_at,
+            r.timestamp,
             r.category,
             r.amount,
             r.status
@@ -928,12 +928,13 @@ def export_student_analytics(student_id: int, db: Session = Depends(get_db)):
 def export_admin_analytics(db: Session = Depends(get_db)):
     rows = (
         db.query(
-    Student.email,
-    Transaction.category,
-    Transaction.amount
-)
+            Student.email,
+            Transaction.category,
+            Transaction.amount
+        )
+    
         .join(Transaction, Transaction.student_id == Student.id)
-        .order_by(Transaction.created_at)
+        .order_by(Transaction.timestamp)
         .all()
     )
 

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 
 import {
@@ -29,113 +29,196 @@ ChartJS.register(
 export default function Analytics() {
   const { user } = useAuth();
   const [data, setData] = useState(null);
-
+  const [isLoading, setIsLoading] = useState(true);
   const isAdmin = user.user_type === "owner";
+  const userId = user.id || 1;
+  const apiBase = "http://localhost:8000";
+
 
   useEffect(() => {
     const url = isAdmin
-      ? "http://localhost:8000/analytics/admin"
-      : `http://localhost:8000/analytics/student/${user.id || 1}`;
+      ? `${apiBase}/analytics/admin`
+      : `${apiBase}/analytics/student/${userId}`;
 
     fetch(url)
       .then((res) => res.json())
-      .then(setData);
-  }, [isAdmin, user]);
+      .then((payload) => {
+        if (isActive) setData(payload);
+      })
+      .finally(() => {
+        if (isActive) setIsLoading(false);
+      });
+    return () => {
+      isActive = false;
+    };
+  }, [apiBase, isAdmin, userId]);
 
   const [trust, setTrust] = useState(null);
 
   useEffect(() => {
-    const trustUrl = isAdmin
-      ? "http://localhost:8000/analytics/trust/admin"
-      : `http://localhost:8000/analytics/trust/student/${user.id || 1}`;
-
+        let isActive = true;
+       const trustUrl = isAdmin
+        ? `${apiBase}/analytics/trust/admin`
+        : `${apiBase}/analytics/trust/student/${userId}`;
     fetch(trustUrl)
       .then((res) => res.json())
-      .then(setTrust);
-  }, [isAdmin, user]);
-
-  if (!data || !trust) return <p>Loading analytics...</p>;
+      .then((payload) => {
+        if (isActive) setTrust(payload);
+      });
+    return () => {
+      isActive = false;
+    };
+  }, [apiBase, isAdmin, userId]);
+  if (isLoading || !data || !trust) {
+    return <p style={styles.loading}>Loading analytics...</p>;
+  }
 
   /* ---------------- STUDENT CHART DATA ---------------- */
 
-  const pieData = {
-    labels: ["Food", "Events"],
-    datasets: [
-      {
-        data: [data.totals?.canteen || 0, data.totals?.event || 0],
-        backgroundColor: ["#22c55e", "#3b82f6"],
-      },
-    ],
-  };
+const pieData = useMemo(
+    () => ({
+      labels: ["Food", "Events"],
+      datasets: [
+        {
+          data: [data.totals?.canteen || 0, data.totals?.event || 0],
+          backgroundColor: ["#22c55e", "#3b82f6"],
+        },
+      ],
+    }),
+    [data],
+  );
 
-  const lineData = {
-    labels: (data.timeline || []).map(t => t.date),
-    datasets: [
-      {
-        label: "Spending",
-        data: (data.timeline || []).map(t => t.amount),
-        borderColor: "#2563eb",
-        backgroundColor: "#93c5fd",
-        tension: 0.3,
-      },
-    ],
-  };
+  const lineData = useMemo(
+    () => ({
+      labels: (data.timeline || []).map((item) => item.date),
+      datasets: [
+        {
+          label: "Spending",
+          data: (data.timeline || []).map((item) => item.amount),
+          borderColor: "#2563eb",
+          backgroundColor: "rgba(37, 99, 235, 0.2)",
+          tension: 0.3,
+          pointRadius: 2,
+        },
+      ],
+    }),
+    [data],
+  );
 
   /* ---------------- ADMIN CHART DATA ---------------- */
 
-  const barData = isAdmin
-    ? {
-        labels: data.students.map((s) => s.email),
-        datasets: [
-          {
-            label: "Total Spent",
-            labels: (data.students || []).map(s => s.email),
-            data: (data.students || []).map(s => s.total_spent),
-            backgroundColor: "#6366f1",
+  const barData = useMemo(() => {
+    if (!isAdmin) return null;
+    return {
+      labels: (data.students || []).map((student) => student.email),
+      datasets: [
+        {
+          label: "Total Spent",
+          data: (data.students || []).map((student) => student.total_spent),
+          backgroundColor: "#6366f1",
+          borderRadius: 8,
+        },
+      ],
+    };
+  }, [data, isAdmin]);
+
+  const chartOptions = useMemo(
+    () => ({
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: false,
+      plugins: {
+        legend: {
+          position: "bottom",
+        },
+      },
+      scales: {
+        x: {
+          ticks: {
+            maxRotation: 40,
+            minRotation: 0,
           },
-        ],
-      }
-    : null;
+        },
+      },
+    }),
+    [],
+  );
+
+  const exportUrl = isAdmin
+    ? `${apiBase}/analytics/export/admin`
+    : `${apiBase}/analytics/export/student/${userId}`;
 
   return (
-    <div style={{ maxWidth: 900 }}>
-      <h2>📊 Analytics</h2>
+    <div style={styles.page}>
+      <div style={styles.header}>
+        <div>
+          <p style={styles.kicker}>Campus insights</p>
+          <h2 style={styles.title}>📊 Analytics Dashboard</h2>
+          <p style={styles.subtitle}>
+            Track spending, engagement, and trust indicators in one place.
+          </p>
+        </div>
+        <a href={exportUrl} style={styles.exportButton}>
+          Export CSV
+        </a>
+      </div>
 
       {/* STUDENT VIEW */}
       {!isAdmin && (
-        <>
-          <h3>Spending Breakdown</h3>
-          <div style={card}>
-            <Pie data={pieData} />
-          </div>
+        <div style={styles.grid}>
+          <section style={{ ...styles.card, ...styles.chartCard }}>
+            <div style={styles.cardHeader}>
+              <h3 style={styles.cardTitle}>Spending Breakdown</h3>
+              <span style={styles.cardMeta}>Food vs Events</span>
+            </div>
+            <div style={styles.chartArea}>
+              <Pie data={pieData} options={chartOptions} />
+            </div>
+          </section>
+          <section style={{ ...styles.card, ...styles.chartCard }}>
+            <div style={styles.cardHeader}>
+              <h3 style={styles.cardTitle}>Spending Over Time</h3>
+              <span style={styles.cardMeta}>Daily totals</span>
+            </div>
+            <div style={styles.chartArea}>
+              <Line data={lineData} options={chartOptions} />
+            </div>
+          </section>
 
-          <h3>Spending Over Time</h3>
-          <div style={card}>
-            <Line data={lineData} />
-          </div>
-
-          <h3>Most Ordered Food</h3>
-          <p>🍽 {data.top_food || "No orders yet"}</p>
-
-          <h3>Trust Score</h3>
-
-          <div style={card}>
-            <p>
-              <b>Score:</b> {trust.trust_score}
+          <section style={styles.card}>
+            <div style={styles.cardHeader}>
+              <h3 style={styles.cardTitle}>Most Ordered Food</h3>
+            </div>
+            <p style={styles.highlightText}>
+              🍽 {data.top_food || "No orders yet"}
             </p>
-            <p>
-              <b>Tier:</b> {trust.trust_tier}
-            </p>
+          </section>
 
-            <p>
-              🍽 Orders Collected: {trust.orders.collected} /{" "}
-              {trust.orders.total}
-            </p>
-            <p>🎟 Events Attended: {trust.events.attended}</p>
-            <p>❌ No-shows: {trust.events.no_shows}</p>
+          <section style={styles.card}>
+            <div style={styles.cardHeader}>
+              <h3 style={styles.cardTitle}>Trust Score</h3>
+            </div>
+            <div style={styles.statRow}>
+              <div>
+                <p style={styles.statLabel}>Score</p>
+                <p style={styles.statValue}>{trust.trust_score}</p>
+              </div>
+              <div>
+                <p style={styles.statLabel}>Tier</p>
+                <p style={styles.statValue}>{trust.trust_tier}</p>
+              </div>
+            </div>
+            <div style={styles.metrics}>
+              <p>
+                🍽 Orders Collected: {trust.orders.collected} /{" "}
+                {trust.orders.total}
+              </p>
+              <p>🎟 Events Attended: {trust.events.attended}</p>
+              <p>❌ No-shows: {trust.events.no_shows}</p>
+            </div>
 
-            <h4>How to improve</h4>
-            <ul>
+            <h4 style={styles.sectionTitle}>How to improve</h4>
+            <ul style={styles.list}>
               {trust.events.no_shows > 0 && <li>Avoid event no-shows</li>}
               {trust.orders.collected < trust.orders.total && (
                 <li>Collect placed food orders on time</li>
@@ -145,52 +228,196 @@ export default function Analytics() {
                 <li>Great consistency — keep it up 👍</li>
               )}
             </ul>
-          </div>
-        </>
+          </section>
+        </div>
       )}
 
       {/* ADMIN VIEW */}
       {isAdmin && (
-        <>
-          <h3>Student Spending (Campus)</h3>
-          <div style={card}>
-            <Bar data={barData} />
-          </div>
+        <div style={styles.grid}>
+          <section style={{ ...styles.card, ...styles.chartCard }}>
+            <div style={styles.cardHeader}>
+              <h3 style={styles.cardTitle}>Student Spending (Campus)</h3>
+              <span style={styles.cardMeta}>Total per student</span>
+            </div>
+            <div style={styles.chartArea}>
+              <Bar data={barData} options={chartOptions} />
+            </div>
+          </section>
 
-          <h3>Most Ordered Food (Campus)</h3>
-          <p>🍔 {data.most_ordered_food}</p>
+          <section style={styles.card}>
+            <div style={styles.cardHeader}>
+              <h3 style={styles.cardTitle}>Most Ordered Food (Campus)</h3>
+            </div>
+            <p style={styles.highlightText}>
+              🍔 {data.most_ordered_food || "No campus orders yet"}
+            </p>
+          </section>
 
-          <h3>Trust Scores (Campus)</h3>
-
-          <table border="1" cellPadding="6">
-            <thead>
-              <tr>
-                <th>Student</th>
-                <th>Score</th>
-                <th>Tier</th>
-                <th>Risk</th>
-              </tr>
-            </thead>
-            <tbody>
-              {(trust || []).map(s => (
-                <tr key={s.student_id}>
-                  <td>{s.email}</td>
-                  <td>{s.trust_score}</td>
-                  <td>{s.trust_tier}</td>
-                  <td>{s.trust_score < 40 ? "⚠ High" : "Normal"}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </>
+          <section style={styles.card}>
+            <div style={styles.cardHeader}>
+              <h3 style={styles.cardTitle}>Trust Scores (Campus)</h3>
+            </div>
+            <div style={styles.tableWrapper}>
+              <table style={styles.table}>
+                <thead>
+                  <tr>
+                    <th>Student</th>
+                    <th>Score</th>
+                    <th>Tier</th>
+                    <th>Risk</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(trust || []).map((student) => (
+                    <tr key={student.student_id}>
+                      <td>{student.email}</td>
+                      <td>{student.trust_score}</td>
+                      <td>{student.trust_tier}</td>
+                      <td>
+                        {student.trust_score < 40 ? "⚠ High" : "Normal"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </div>
       )}
     </div>
   );
 }
 
-const card = {
-  background: "white",
-  padding: 20,
-  borderRadius: 12,
-  marginBottom: 30,
+const styles = {
+  page: {
+    maxWidth: 1100,
+    margin: "0 auto",
+    display: "flex",
+    flexDirection: "column",
+    gap: 24,
+  },
+  header: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 24,
+    background: "white",
+    padding: "20px 24px",
+    borderRadius: 16,
+    boxShadow: "0 10px 30px rgba(15, 23, 42, 0.08)",
+  },
+  kicker: {
+    textTransform: "uppercase",
+    fontSize: 12,
+    letterSpacing: "0.18em",
+    color: "#64748b",
+    marginBottom: 4,
+  },
+  title: {
+    margin: 0,
+    fontSize: 28,
+    color: "#0f172a",
+  },
+  subtitle: {
+    marginTop: 6,
+    marginBottom: 0,
+    color: "#475569",
+  },
+  exportButton: {
+    background: "#2563eb",
+    color: "white",
+    textDecoration: "none",
+    padding: "10px 18px",
+    borderRadius: 10,
+    fontWeight: 600,
+    boxShadow: "0 8px 20px rgba(37, 99, 235, 0.25)",
+  },
+  grid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+    gap: 20,
+  },
+  card: {
+    background: "white",
+    padding: 20,
+    borderRadius: 16,
+    boxShadow: "0 12px 30px rgba(15, 23, 42, 0.08)",
+  },
+  chartCard: {
+    minHeight: 320,
+  },
+  cardHeader: {
+    display: "flex",
+    alignItems: "baseline",
+    justifyContent: "space-between",
+    gap: 12,
+    marginBottom: 12,
+  },
+  cardTitle: {
+    margin: 0,
+    fontSize: 18,
+    color: "#0f172a",
+  },
+  cardMeta: {
+    fontSize: 12,
+    color: "#94a3b8",
+  },
+  chartArea: {
+    minHeight: 240,
+  },
+  highlightText: {
+    fontSize: 20,
+    fontWeight: 600,
+    color: "#1f2937",
+  },
+  statRow: {
+    display: "flex",
+    gap: 24,
+    marginBottom: 12,
+  },
+  statLabel: {
+    fontSize: 12,
+    textTransform: "uppercase",
+    letterSpacing: "0.12em",
+    color: "#64748b",
+    marginBottom: 4,
+  },
+  statValue: {
+    fontSize: 24,
+    fontWeight: 700,
+    color: "#0f172a",
+    margin: 0,
+  },
+  metrics: {
+    display: "grid",
+    gap: 6,
+    color: "#475569",
+    marginBottom: 12,
+  },
+  sectionTitle: {
+    margin: "12px 0 8px",
+    fontSize: 16,
+    color: "#0f172a",
+  },
+  list: {
+    margin: 0,
+    paddingLeft: 18,
+    color: "#475569",
+    display: "grid",
+    gap: 6,
+  },
+  tableWrapper: {
+    overflowX: "auto",
+  },
+  table: {
+    width: "100%",
+    borderCollapse: "collapse",
+    fontSize: 14,
+  },
+  loading: {
+    padding: 20,
+    fontSize: 16,
+    color: "#475569",
+  },
 };
