@@ -7,3 +7,7 @@ engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(bind=engine)
 
 Base = declarative_base()
+
+from models import *  # IMPORTANT: ensures all models are registered
+
+Base.metadata.create_all(bind=engine)

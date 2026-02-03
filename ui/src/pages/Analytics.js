@@ -35,23 +35,27 @@ export default function Analytics() {
   const apiBase = "http://localhost:8000";
 
 
-  useEffect(() => {
-    const url = isAdmin
-      ? `${apiBase}/analytics/admin`
-      : `${apiBase}/analytics/student/${userId}`;
+useEffect(() => {
+  let isActive = true;
 
-    fetch(url)
-      .then((res) => res.json())
-      .then((payload) => {
-        if (isActive) setData(payload);
-      })
-      .finally(() => {
-        if (isActive) setIsLoading(false);
-      });
-    return () => {
-      isActive = false;
-    };
-  }, [apiBase, isAdmin, userId]);
+  const url = isAdmin
+    ? `${apiBase}/analytics/admin`
+    : `${apiBase}/analytics/student/${userId}`;
+
+  fetch(url)
+    .then((res) => res.json())
+    .then((payload) => {
+      if (isActive) setData(payload);
+    })
+    .finally(() => {
+      if (isActive) setIsLoading(false);
+    });
+
+  return () => {
+    isActive = false;
+  };
+}, [apiBase, isAdmin, userId]);
+
 
   const [trust, setTrust] = useState(null);
 
@@ -69,9 +73,7 @@ export default function Analytics() {
       isActive = false;
     };
   }, [apiBase, isAdmin, userId]);
-  if (isLoading || !data || !trust) {
-    return <p style={styles.loading}>Loading analytics...</p>;
-  }
+
 
   /* ---------------- STUDENT CHART DATA ---------------- */
 
@@ -143,6 +145,10 @@ const pieData = useMemo(
     }),
     [],
   );
+
+  if (isLoading || !data || !trust) {
+  return <p style={styles.loading}>Loading analytics...</p>;
+}
 
   const exportUrl = isAdmin
     ? `${apiBase}/analytics/export/admin`

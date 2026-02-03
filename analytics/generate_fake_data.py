@@ -36,10 +36,12 @@ def seed_transactions(students):
     for s in students:
         for _ in range(random.randint(5, 20)):
             tx = Transaction(
+
                 student_id=s.id,
                 amount=random.randint(50, 300),
                 category=random.choice(["canteen", "event"]),
-                status="SUCCESS"
+                status="SUCCESS",
+                timestamp=datetime.utcnow() - timedelta(days=random.randint(0, 30))
             )
             db.add(tx)
     db.commit()

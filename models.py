@@ -15,13 +15,14 @@ class Student(Base):
 
 class Transaction(Base):
     __tablename__ = "transactions"
+
     id = Column(Integer, primary_key=True)
-    student_id = Column(Integer)
+    student_id = Column(Integer, ForeignKey("students.id"))
     amount = Column(Float)
     category = Column(String)
     status = Column(String)
-    timestamp = Column(DateTime, default=datetime.utcnow)
 
+    timestamp = Column(DateTime, default=datetime.utcnow) 
 
 class CanteenItem(Base):
     __tablename__ = "canteen_items"

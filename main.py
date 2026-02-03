@@ -5,6 +5,7 @@ from models import Student, Transaction, CanteenOrder, CanteenOrderItem, Canteen
 from models import Event, EventRegistration
 from scoring import update_trust_score
 from datetime import datetime, timedelta
+
 from qr_utils import generate_qr_token
 from fastapi.middleware.cors import CORSMiddleware
 from models import User
