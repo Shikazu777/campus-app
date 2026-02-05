@@ -28,42 +28,54 @@ ChartJS.register(
 
 export default function Analytics() {
   const { user } = useAuth();
-  const [data, setData] = useState(null);
+  const [data, setData] = useState({
+    totals: {},
+    timeline: [],
+    students: [],
+    most_ordered_food: null,
+  });
   const [isLoading, setIsLoading] = useState(true);
   const isAdmin = user.user_type === "owner";
   const userId = user.id || 1;
   const apiBase = "http://localhost:8000";
 
+  useEffect(() => {
+    let isActive = true;
 
-useEffect(() => {
-  let isActive = true;
+    const url = isAdmin
+      ? `${apiBase}/analytics/admin`
+      : `${apiBase}/analytics/student/${userId}`;
 
-  const url = isAdmin
-    ? `${apiBase}/analytics/admin`
-    : `${apiBase}/analytics/student/${userId}`;
+    fetch(url)
+      .then((res) => res.json())
+      .then((payload) => {
+        if (isActive) setData(payload);
+      })
+      .finally(() => {
+        if (isActive) setIsLoading(false);
+      });
 
-  fetch(url)
-    .then((res) => res.json())
-    .then((payload) => {
-      if (isActive) setData(payload);
-    })
-    .finally(() => {
-      if (isActive) setIsLoading(false);
-    });
+    return () => {
+      isActive = false;
+    };
+  }, [apiBase, isAdmin, userId]);
 
-  return () => {
-    isActive = false;
-  };
-}, [apiBase, isAdmin, userId]);
-
-
-  const [trust, setTrust] = useState(null);
+  const [trust, setTrust] = useState(
+    isAdmin
+      ? []
+      : {
+          trust_score: 0,
+          trust_tier: "",
+          orders: { total: 0, collected: 0 },
+          events: { attended: 0, no_shows: 0 },
+        },
+  );
 
   useEffect(() => {
-        let isActive = true;
-       const trustUrl = isAdmin
-        ? `${apiBase}/analytics/trust/admin`
-        : `${apiBase}/analytics/trust/student/${userId}`;
+    let isActive = true;
+    const trustUrl = isAdmin
+      ? `${apiBase}/analytics/trust/admin`
+      : `${apiBase}/analytics/trust/student/${userId}`;
     fetch(trustUrl)
       .then((res) => res.json())
       .then((payload) => {
@@ -74,10 +86,9 @@ useEffect(() => {
     };
   }, [apiBase, isAdmin, userId]);
 
-
   /* ---------------- STUDENT CHART DATA ---------------- */
 
-const pieData = useMemo(
+  const pieData = useMemo(
     () => ({
       labels: ["Food", "Events"],
       datasets: [
@@ -147,8 +158,8 @@ const pieData = useMemo(
   );
 
   if (isLoading || !data || !trust) {
-  return <p style={styles.loading}>Loading analytics...</p>;
-}
+    return <p style={styles.loading}>Loading analytics...</p>;
+  }
 
   const exportUrl = isAdmin
     ? `${apiBase}/analytics/export/admin`
@@ -216,20 +227,25 @@ const pieData = useMemo(
             </div>
             <div style={styles.metrics}>
               <p>
-                🍽 Orders Collected: {trust.orders.collected} /{" "}
-                {trust.orders.total}
+                🍽 Orders Collected: {trust.orders?.collected ?? 0} /{" "}
+                {trust.orders?.total ?? 0}
               </p>
-              <p>🎟 Events Attended: {trust.events.attended}</p>
-              <p>❌ No-shows: {trust.events.no_shows}</p>
+              <p>🎟 Events Attended: {trust.events?.attended ?? 0}</p>
+              <p>❌ No-shows: {trust.events?.no_shows ?? 0}</p>
             </div>
 
             <h4 style={styles.sectionTitle}>How to improve</h4>
             <ul style={styles.list}>
-              {trust.events.no_shows > 0 && <li>Avoid event no-shows</li>}
-              {trust.orders.collected < trust.orders.total && (
+              {trust.events?.no_shows > 0 && <li>Avoid event no-shows</li>}
+
+              {trust.orders && trust.orders.collected < trust.orders.total && (
                 <li>Collect placed food orders on time</li>
               )}
-              {trust.events.attended === 0 && <li>Attend registered events</li>}
+
+              {trust.events?.attended === 0 && (
+                <li>Attend registered events</li>
+              )}
+
               {trust.trust_score >= 80 && (
                 <li>Great consistency — keep it up 👍</li>
               )}
@@ -280,9 +296,7 @@ const pieData = useMemo(
                       <td>{student.email}</td>
                       <td>{student.trust_score}</td>
                       <td>{student.trust_tier}</td>
-                      <td>
-                        {student.trust_score < 40 ? "⚠ High" : "Normal"}
-                      </td>
+                      <td>{student.trust_score < 40 ? "⚠ High" : "Normal"}</td>
                     </tr>
                   ))}
                 </tbody>
