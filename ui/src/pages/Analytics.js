@@ -42,18 +42,36 @@ export default function Analytics() {
   useEffect(() => {
     let isActive = true;
 
-    const url = isAdmin
-      ? `${apiBase}/analytics/admin`
-      : `${apiBase}/analytics/student/${userId}`;
+    async function loadAnalytics() {
+      try {
+        const dataUrl = isAdmin
+          ? `${apiBase}/analytics/admin`
+          : `${apiBase}/analytics/student/${userId}`;
 
-    fetch(url)
-      .then((res) => res.json())
-      .then((payload) => {
-        if (isActive) setData(payload);
-      })
-      .finally(() => {
+        const trustUrl = isAdmin
+          ? `${apiBase}/analytics/trust/admin`
+          : `${apiBase}/analytics/trust/student/${userId}`;
+
+        const [dataRes, trustRes] = await Promise.all([
+          fetch(dataUrl),
+          fetch(trustUrl),
+        ]);
+
+        const dataPayload = await dataRes.json();
+        const trustPayload = await trustRes.json();
+
+        if (!isActive) return;
+
+        setData(dataPayload);
+        setTrust(trustPayload.trust ?? trustPayload);
+        setIsLoading(false);
+      } catch (err) {
+        console.error("Analytics load failed:", err);
         if (isActive) setIsLoading(false);
-      });
+      }
+    }
+
+    loadAnalytics();
 
     return () => {
       isActive = false;
@@ -73,14 +91,38 @@ export default function Analytics() {
 
   useEffect(() => {
     let isActive = true;
-    const trustUrl = isAdmin
-      ? `${apiBase}/analytics/trust/admin`
-      : `${apiBase}/analytics/trust/student/${userId}`;
-    fetch(trustUrl)
-      .then((res) => res.json())
-      .then((payload) => {
-        if (isActive) setTrust(payload);
-      });
+
+    async function loadAnalytics() {
+      try {
+        const dataUrl = isAdmin
+          ? `${apiBase}/analytics/admin`
+          : `${apiBase}/analytics/student/${userId}`;
+
+        const trustUrl = isAdmin
+          ? `${apiBase}/analytics/trust/admin`
+          : `${apiBase}/analytics/trust/student/${userId}`;
+
+        const [dataRes, trustRes] = await Promise.all([
+          fetch(dataUrl),
+          fetch(trustUrl),
+        ]);
+
+        const dataPayload = await dataRes.json();
+        const trustPayload = await trustRes.json();
+
+        if (!isActive) return;
+
+        setData(dataPayload);
+        setTrust(trustPayload.trust ?? trustPayload);
+        setIsLoading(false);
+      } catch (err) {
+        console.error("Analytics load failed:", err);
+        if (isActive) setIsLoading(false);
+      }
+    }
+
+    loadAnalytics();
+
     return () => {
       isActive = false;
     };
