@@ -37,7 +37,8 @@ export default function Analytics() {
   const [isLoading, setIsLoading] = useState(true);
   const isAdmin = user.user_type === "owner";
   const userId = user.id || 1;
-  const apiBase = "http://localhost:8000";
+  const apiBase = "https://campus-app-womj.onrender.com";
+
 
   useEffect(() => {
     let isActive = true;
