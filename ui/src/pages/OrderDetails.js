@@ -1,5 +1,7 @@
 import { useParams } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
+
+const API_BASE = "https://campus-app-womj.onrender.com";
 
 export default function OrderDetails() {
   const { id } = useParams();
@@ -8,21 +10,23 @@ export default function OrderDetails() {
 
   /* ---------------- FETCH ORDER ---------------- */
 
-  const fetchOrder = () => {
-    fetch(`http://localhost:8000/canteen/order/${id}`)
+  const fetchOrder = useCallback(() => {
+    fetch(`${API_BASE}/canteen/order/${id}`)
       .then(res => res.json())
       .then(data => {
-        if (!data.error) setOrder(data);
+        if (!data?.error) setOrder(data);
       });
-  };
+  }, [id]);
 
   /* ---------------- FETCH ITEMS ---------------- */
 
-  const fetchItems = () => {
-    fetch(`http://localhost:8000/canteen/order/${id}/items`)
+  const fetchItems = useCallback(() => {
+    fetch(`${API_BASE}/canteen/order/${id}/items`)
       .then(res => res.json())
       .then(setItems);
-  };
+  }, [id]);
+
+  /* ---------------- INITIAL LOAD + POLLING ---------------- */
 
   useEffect(() => {
     fetchOrder();
@@ -30,7 +34,7 @@ export default function OrderDetails() {
 
     const interval = setInterval(fetchOrder, 5000);
     return () => clearInterval(interval);
-  }, [id]);
+  }, [fetchOrder, fetchItems]);
 
   if (!order) return <p>❌ Order not found</p>;
 
