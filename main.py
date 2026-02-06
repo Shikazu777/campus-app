@@ -861,31 +861,38 @@ def student_trust_analytics(student_id: int, db: Session = Depends(get_db)):
     ).count()
 
     return {
-        "trust_score": student.trust_score,
-        "trust_tier": student.trust_tier,
-        "orders": {
-            "total": total_orders,
-            "collected": collected_orders
-        },
-        "events": {
-            "attended": attendance,
-            "no_shows": no_shows
+        "mode": "student",
+        "trust": {
+            "trust_score": student.trust_score,
+            "trust_tier": student.trust_tier,
+            "orders": {
+                "total": total_orders,
+                "collected": collected_orders
+            },
+            "events": {
+                "attended": attendance,
+                "no_shows": no_shows
+            }
         }
     }
+
 
 @app.get("/analytics/trust/admin")
 def admin_trust_overview(db: Session = Depends(get_db)):
     students = db.query(Student).all()
 
-    return [
-        {
-            "student_id": s.id,
-            "email": s.email,
-            "trust_score": s.trust_score,
-            "trust_tier": s.trust_tier
-        }
-        for s in students
-    ]
+    return {
+        "mode": "admin",
+        "trust": [
+            {
+                "student_id": s.id,
+                "email": s.email,
+                "trust_score": s.trust_score,
+                "trust_tier": s.trust_tier
+            }
+            for s in students
+        ]
+    }
 
 
 @app.get("/analytics/export/student/{student_id}")
