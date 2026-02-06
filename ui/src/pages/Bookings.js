@@ -23,21 +23,8 @@ export default function Bookings() {
 
 /* ---------------- COMPONENT ---------------- */
 
-function BookingItem({ title, amount, status, date }) {
-  return (
-    <div style={itemStyle}>
-      <div>
-        <b>{title}</b>
-        <p style={{ fontSize: "13px", color: "#666" }}>{date}</p>
-      </div>
 
-      <div style={{ textAlign: "right" }}>
-        <p>{amount}</p>
-        <p style={{ fontSize: "13px" }}>{status}</p>
-      </div>
-    </div>
-  );
-}
+
 
 /* ---------------- STYLES ---------------- */
 
