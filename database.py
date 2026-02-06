@@ -17,6 +17,4 @@ SessionLocal = sessionmaker(
 
 Base = declarative_base()
 
-from models import *  # IMPORTANT: ensures all models are registered
-
-Base.metadata.create_all(bind=engine)
+from models import *  # keep this
