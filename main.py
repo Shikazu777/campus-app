@@ -89,6 +89,15 @@ def list_users(db: Session = Depends(get_db)):
         for u in users
     ]
 
+@app.post("/admin/seed")
+def seed_prod_data(db: Session = Depends(get_db)):
+    from analytics.generate_fake_data import seed_students, seed_transactions
+
+    students = seed_students(20)
+    seed_transactions(students)
+
+    return {"message": "Production data seeded"}
+
 
 @app.post("/register")
 def register_student(email: str, db: Session = Depends(get_db)):
