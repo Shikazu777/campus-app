@@ -2,7 +2,10 @@ import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-DATABASE_URL = os.getenv("postgresql://neondb_owner:npg_xr4hB7UOVKRZ@ep-polished-unit-a17my8z5-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require")
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+if not DATABASE_URL:
+    raise RuntimeError("DATABASE_URL is not set")
 
 engine = create_engine(
     DATABASE_URL,
@@ -17,4 +20,6 @@ SessionLocal = sessionmaker(
 
 Base = declarative_base()
 
-from models import *  # keep this
+from models import *
+
+Base.metadata.create_all(bind=engine)
