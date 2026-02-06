@@ -32,12 +32,3 @@ const sectionStyle = {
   marginTop: "30px"
 };
 
-const itemStyle = {
-  display: "flex",
-  justifyContent: "space-between",
-  background: "white",
-  padding: "14px",
-  borderRadius: "10px",
-  marginBottom: "10px",
-  boxShadow: "0 2px 6px rgba(0,0,0,0.08)"
-};
