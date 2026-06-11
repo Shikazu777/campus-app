@@ -1,0 +1,16 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# Environment variables
+.env
+
+# React
+node_modules/
+
+# macOS
+.DS_Store
+
+# VS Code
+.vscode/settings.json
