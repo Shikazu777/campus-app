@@ -539,3 +539,14 @@ FRONTEND
 
 cd ~/Projects/campus-app/ui
 npm start
+
+
+GITPUSH
+
+git status
+
+git add .
+
+git commit -m "Describe what changed"
+
+git push
