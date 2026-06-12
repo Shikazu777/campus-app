@@ -2,82 +2,205 @@
 
 ## Overview
 
-The Campus App Management System is a full-stack web application designed to digitize and streamline campus operations through a unified platform. The system integrates canteen ordering, event management, analytics dashboards, trust scoring, role-based access control, and administrative monitoring into a single ecosystem.
+Campus App Management System is a full-stack smart campus platform designed to centralize student services, canteen operations, event management, analytics, trust scoring, and administrative controls into a single web application.
 
-The primary objective of this project is to reduce manual campus processes, improve operational efficiency, provide real-time insights, and create a scalable foundation for future smart-campus initiatives.
+The project was developed as a mini-project to demonstrate modern full-stack application development using FastAPI, React, PostgreSQL, and Role-Based Access Control (RBAC).
+
+The system provides separate functionality for students and administrators while maintaining a scalable architecture suitable for future deployment and expansion.
 
 ---
 
-# Features
+# Objectives
 
-## Student Features
+The primary goals of the project are:
 
-### Canteen Ordering
+* Digitize campus operations
+* Reduce manual administrative tasks
+* Improve student engagement
+* Provide real-time analytics
+* Track student participation
+* Enable QR-based verification workflows
+* Demonstrate role-based access management
+* Build a scalable smart-campus foundation
+
+---
+
+# Key Features
+
+## Student Module
+
+### Student Dashboard
+
+Students can:
+
+* View profile information
+* Track trust score
+* Monitor campus activity
+* View participation history
+
+---
+
+### Canteen Ordering System
+
+Features:
 
 * Browse available food items
-* View item prices and stock availability
-* Place digital food orders
-* Track order status in real time
+* View pricing information
+* Place food orders
+* Track order status
 * View order history
 * QR-based order collection
 
-### Analytics Dashboard
+Benefits:
 
-* Personal spending analytics
-* Spending trends over time
-* Category-wise spending breakdown
-* Most ordered food item
-* Trust score visualization
-
-### Event Management
-
-* Browse available events
-* Register for events
-* View registration status
-* QR-based event attendance
-* Event participation history
-
-### Trust Score System
-
-* Dynamic trust score calculation
-* Trust tier classification
-* Attendance tracking
-* Order collection tracking
-* Behavioral analytics
+* Reduced waiting time
+* Digital order management
+* Improved canteen workflow
 
 ---
 
-## Administrator Features
+### Event Registration System
 
-### Campus Analytics
+Students can:
 
-* Student spending analytics
-* Campus-wide food ordering statistics
-* Most ordered food reports
-* Trust score monitoring
-* Risk identification
+* View available events
+* Register for events
+* Monitor registration status
+* Receive attendance QR codes
+* View event history
 
-### Event Management
+---
+
+### Analytics Dashboard
+
+Provides:
+
+* Spending trends
+* Category-wise spending breakdown
+* Most ordered food items
+* Participation statistics
+* Trust score visualization
+
+Visualizations include:
+
+* Pie Charts
+* Bar Charts
+* Trend Analysis
+
+---
+
+### Trust Score System
+
+Each student receives a dynamic trust score.
+
+Trust score is influenced by:
+
+Positive Factors:
+
+* Event attendance
+* Successful transactions
+* Order collection completion
+
+Negative Factors:
+
+* Event no-shows
+* Uncollected orders
+* Repeated inactive registrations
+
+Trust score tiers:
+
+* High Trust
+* Normal
+* Low Trust
+
+---
+
+# Administrative Module
+
+## Administrative Dashboard
+
+Provides institution-wide monitoring.
+
+Administrators can:
+
+* Monitor campus activity
+* Review student statistics
+* Analyze ordering trends
+* Track participation metrics
+
+---
+
+## Event Management
+
+Administrators can:
+
+* Create events
+* Edit events
+* Disable events
+* View registrations
+* Confirm attendance
+
+---
+
+## Canteen Management
+
+Administrators can:
+
+* Add food items
+* Update stock
+* Enable/disable products
+* Monitor orders
+* Mark orders as completed
+
+---
+
+## Analytics Management
+
+Provides:
+
+* Spending analytics
+* Most ordered products
+* Participation statistics
+* Trust score distribution
+
+---
+
+# Role-Based Access Control (RBAC)
+
+The system implements role-based permissions.
+
+Supported Roles:
+
+### OWNER
+
+Full system access.
+
+Capabilities:
+
+* User management
+* Event management
+* Analytics access
+* Role assignment
+
+---
+
+### EVENT_EDITOR
+
+Capabilities:
 
 * Create events
 * Update events
-* Close events
 * Manage registrations
-* Monitor attendance
 
-### Canteen Management
+---
 
-* Add food items
-* Update stock levels
-* Toggle item availability
-* Monitor orders
-* Mark orders as ready
+### CANTEEN_EDITOR
 
-### Role-Based Access Control (RBAC)
+Capabilities:
 
-* Assign user roles
-* Manage permissions
-* Separate administrative responsibilities
+* Manage menu items
+* Manage stock
+* Process orders
 
 ---
 
@@ -85,27 +208,20 @@ The primary objective of this project is to reduce manual campus processes, impr
 
 ## Frontend
 
-### ReactJS
+### React
 
-Used to build the interactive user interface.
+Used for:
 
-Key React Concepts:
-
-* Functional Components
-* Hooks
-* Context API
-* React Router
+* User Interface
+* Routing
 * State Management
+* Dashboard Rendering
 
-### Chart.js
+Features:
 
-Used for analytics visualization.
-
-Charts:
-
-* Pie Charts
-* Line Charts
-* Bar Charts
+* Component-Based Architecture
+* Responsive Layouts
+* API Integration
 
 ---
 
@@ -113,19 +229,23 @@ Charts:
 
 ### FastAPI
 
-FastAPI was chosen because of:
+Used for:
 
-* High performance
-* Automatic Swagger documentation
-* Type safety
-* Simple API development
-* Excellent scalability
+* REST API Development
+* Business Logic
+* Validation
+* Authentication Foundation
 
-API Documentation:
+Benefits:
 
-```bash
+* High Performance
+* Automatic Documentation
+* Type Safety
+* Easy Scalability
+
+Swagger Documentation:
+
 http://localhost:8000/docs
-```
 
 ---
 
@@ -133,202 +253,44 @@ http://localhost:8000/docs
 
 ### PostgreSQL
 
-Used for:
+Stores:
 
-* User Management
+* Students
 * Transactions
 * Orders
-* Event Registrations
-* Analytics Data
+* Events
+* Registrations
+* Roles
+* Permissions
 
-### Neon PostgreSQL
+### Cloud Database
 
-Cloud-hosted PostgreSQL database used during deployment.
-
----
-
-## Deployment
-
-### Frontend
-
-Hosted using:
-
-* Vercel
-
-Benefits:
-
-* Automatic deployments
-* GitHub integration
-* Global CDN
-
----
-
-### Backend
-
-Hosted using:
-
-* Render
-
-Benefits:
-
-* Free deployment
-* FastAPI support
-* Environment variable management
-
----
-
-### Database
-
-Hosted using:
+The application supports cloud-hosted PostgreSQL databases such as:
 
 * Neon PostgreSQL
 
 Benefits:
 
-* Free cloud PostgreSQL
+* Online access
 * Automatic backups
-* Easy connection management
+* Easy deployment integration
 
 ---
 
-# System Architecture
+# Database Schema
 
-```
-┌─────────────────────┐
-│      React UI       │
-└──────────┬──────────┘
-           │
-           ▼
-┌─────────────────────┐
-│      FastAPI        │
-│   Business Logic    │
-└──────────┬──────────┘
-           │
-           ▼
-┌─────────────────────┐
-│    PostgreSQL DB    │
-└─────────────────────┘
-```
-
----
-
-# Project Modules
-
-## 1. Authentication Module
-
-Responsibilities:
-
-* User Login
-* User Identification
-* Role Detection
-* Session Management
-
-User Types:
-
-* Student
-* Owner/Admin
-
----
-
-## 2. Analytics Module
-
-Responsibilities:
-
-* Spending aggregation
-* Transaction analysis
-* Visualization preparation
-* Export functionality
-
-Endpoints:
-
-```http
-GET /analytics/student/{student_id}
-GET /analytics/admin
-GET /analytics/trust/student/{student_id}
-GET /analytics/trust/admin
-```
-
----
-
-## 3. Canteen Module
-
-Responsibilities:
-
-* Menu management
-* Order processing
-* Stock management
-* QR verification
-
-Endpoints:
-
-```http
-GET /canteen/items
-POST /canteen/order
-GET /canteen/orders
-POST /canteen/mark-ready
-POST /canteen/scan
-```
-
----
-
-## 4. Event Module
-
-Responsibilities:
-
-* Event creation
-* Registration management
-* Attendance tracking
-* Event analytics
-
-Endpoints:
-
-```http
-POST /event/create
-POST /event/register
-POST /event/confirm
-POST /event/scan
-```
-
----
-
-## 5. Trust Score Module
-
-Responsibilities:
-
-* Score calculation
-* Behavioral monitoring
-* Attendance tracking
-* Risk identification
-
-Factors Affecting Trust Score:
-
-Positive:
-
-* Event attendance
-* Successful transactions
-* Order collection
-
-Negative:
-
-* Event no-shows
-* Uncollected orders
-
----
-
-# Database Design
-
-## Student
+## Students
 
 | Field       | Type    |
 | ----------- | ------- |
 | id          | Integer |
 | email       | String  |
-| trust_score | Integer |
+| trust_score | Float   |
 | trust_tier  | String  |
 
 ---
 
-## Transaction
+## Transactions
 
 | Field      | Type     |
 | ---------- | -------- |
@@ -341,7 +303,20 @@ Negative:
 
 ---
 
-## CanteenOrder
+## Canteen Items
+
+| Field        | Type    |
+| ------------ | ------- |
+| id           | Integer |
+| name         | String  |
+| price        | Float   |
+| category     | String  |
+| stock        | Integer |
+| is_available | Boolean |
+
+---
+
+## Canteen Orders
 
 | Field        | Type    |
 | ------------ | ------- |
@@ -353,196 +328,179 @@ Negative:
 
 ---
 
-## Event
+## Events
 
 | Field       | Type     |
 | ----------- | -------- |
 | id          | Integer  |
 | name        | String   |
-| description | String   |
 | department  | String   |
+| eligibility | String   |
 | event_time  | DateTime |
 
 ---
 
-# Analytics Implemented
+## Event Registrations
 
-## Student Analytics
-
-Displays:
-
-* Spending by category
-* Spending over time
-* Most ordered food item
-
-Visualization:
-
-* Pie Chart
-* Line Chart
+| Field      | Type    |
+| ---------- | ------- |
+| id         | Integer |
+| student_id | Integer |
+| event_id   | Integer |
+| status     | String  |
+| qr_token   | String  |
 
 ---
 
-## Administrative Analytics
+# Project Architecture
 
-Displays:
+Frontend
 
-* Student spending comparison
-* Most ordered campus food
-* Trust score overview
+↓
 
-Visualization:
+React
 
-* Bar Chart
-* Tables
-* Summary Cards
+↓
 
----
+FastAPI Backend
 
-# Challenges Faced
+↓
 
-## Analytics Data Errors
+SQLAlchemy ORM
 
-Issue:
+↓
 
-* Student analytics API returned null data
-
-Solution:
-
-* Seeded realistic transaction data
-* Added defensive React rendering
-* Added loading state management
+PostgreSQL Database
 
 ---
 
-## CSV Export Errors
+# Project Structure
 
-Issue:
-
-```python
-AttributeError:
-Transaction.created_at
+```text
+campus-app
+│
+├── main.py
+├── database.py
+├── models.py
+├── schemas.py
+├── scoring.py
+├── rbac.py
+├── seed_roles.py
+├── qr_utils.py
+│
+├── analytics/
+│
+├── ui/
+│   ├── src/
+│   ├── public/
+│   ├── package.json
+│
+├── requirements.txt
+└── README.md
 ```
 
-Solution:
-
-```python
-Transaction.timestamp
-```
-
-Used the correct database field.
-
----
-
-## Deployment Issues
-
-Issue:
-
-```python
-DATABASE_URL = None
-```
-
-Solution:
-
-Configured environment variables correctly on Render.
-
----
-
-## React Hook Errors
-
-Issue:
-
-```javascript
-React Hook useMemo called conditionally
-```
-
-Solution:
-
-Moved hooks outside conditional rendering blocks.
-
----
-
-# Future Enhancements
-
-### JWT Authentication
-
-* Secure login
-* Refresh tokens
-* Role-based authorization
-
-### Power BI Integration
-
-* Advanced dashboards
-* Predictive analytics
-* KPI tracking
-
-### Mobile Application
-
-* Android support
-* iOS support
-
-### AI Recommendations
-
-* Food recommendations
-* Event recommendations
-* Personalized suggestions
-
-### Real Payment Gateway
-
-* Razorpay
-* Stripe
-* UPI support
-
----
-
-# Installation
+# Local Development Setup
 
 ## Clone Repository
 
 ```bash
-git clone https://github.com/yourusername/campus-app.git
+git clone git@github.com:Shikazu777/campus-app.git
+cd campus-app
+```
+
+## Create Python Virtual Environment
+
+```bash
+python3 -m venv .venv
+```
+
+Activate:
+
+```bash
+source .venv/bin/activate
 ```
 
 ---
 
-## Backend Setup
+## Install Backend Dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-Run:
+---
+
+## Configure Environment Variables
+
+Create:
+
+```text
+.env
+```
+
+Example:
+
+```env
+DATABASE_URL=postgresql://username:password@host/database
+```
+
+The backend loads environment variables using:
+
+```python
+load_dotenv()
+```
+
+---
+
+## Start Backend
 
 ```bash
 uvicorn main:app --reload
 ```
 
----
+Backend URL:
 
-## Frontend Setup
+```text
+http://127.0.0.1:8000
+```
 
-```bash
-cd ui
-npm install
-npm start
+API Docs:
+
+```text
+http://127.0.0.1:8000/docs
 ```
 
 ---
 
-# Project Status
+## Start Frontend
 
-Current Version: v1.0
+```bash
+cd ui
 
-Completed Modules:
+npm install
 
-* Student Dashboard
-* Admin Dashboard
-* Analytics System
-* Trust Scoring
-* Canteen Ordering
-* Event Management
-* CSV Export
-* Role-Based Access Control
-* Deployment
+npm start
+```
+
+Frontend URL:
+
+```text
+http://localhost:3000
+```
+
+---
+
+# Future Enhancements
+
+* JWT Authentication
+* Mobile Application
+* Push Notifications
+* AI-Based Recommendations
+* Power BI Integration
+* Real-Time Event Updates
+* Payment Gateway Integration
+* Advanced Analytics
+* Attendance Prediction Models
 
 ---
 
